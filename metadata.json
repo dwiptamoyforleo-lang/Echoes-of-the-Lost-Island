@@ -1,0 +1,6 @@
+{
+  "name": "Echoes of the Lost Island",
+  "description": "A stylized third-person 3D adventure on an ancient island.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

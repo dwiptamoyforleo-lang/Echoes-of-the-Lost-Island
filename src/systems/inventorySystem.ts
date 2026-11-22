@@ -1,0 +1,264 @@
+import type { LevelId } from './progressionSystem';
+
+export type ItemCategory = 'fragment' | 'key' | 'relic' | 'crystal';
+
+export type ItemIconId = 'fragment' | 'key' | 'compass' | 'crystal' | 'relic';
+
+export interface InventoryItemDefinition {
+  id: string;
+  name: string;
+  description: string;
+  iconId: ItemIconId;
+  category: ItemCategory;
+  levelOfOrigin: LevelId | 'global';
+  loreText?: string;
+}
+
+export interface InventoryItem extends InventoryItemDefinition {
+  quantity: number;
+}
+
+export const ANCIENT_FRAGMENTS: readonly InventoryItemDefinition[] = [
+  {
+    id: 'fragment-1',
+    name: 'Echo of the Tides',
+    description: 'First Ancient Fragment recovered from the Forgotten Shore.',
+    iconId: 'fragment',
+    category: 'fragment',
+    levelOfOrigin: 'level1',
+    loreText:
+      'Carved when the islanders first charted the reefs, this fragment hums with the steady pull of moonlit tides and remembers safe harbor.',
+  },
+  {
+    id: 'fragment-2',
+    name: 'Echo of the Gale',
+    description: 'Second Ancient Fragment attuned to the Whispering Canopy.',
+    iconId: 'fragment',
+    category: 'fragment',
+    levelOfOrigin: 'level2',
+    loreText:
+      'Kept high among the canopy wind-chimes, it carried messages across the valley before the Great Silence fell over the isle.',
+  },
+  {
+    id: 'fragment-3',
+    name: 'Echo of the Stars',
+    description: 'Third Ancient Fragment housed in the Sunken Observatory.',
+    iconId: 'fragment',
+    category: 'fragment',
+    levelOfOrigin: 'level3',
+    loreText:
+      'A prism-core cut to trap starlight beneath the waves; its facets trace constellations no longer visible above the horizon.',
+  },
+  {
+    id: 'fragment-4',
+    name: 'Echo of the Ember',
+    description: 'Fourth Ancient Fragment forged in the Obsidian Caldera.',
+    iconId: 'fragment',
+    category: 'fragment',
+    levelOfOrigin: 'level4',
+    loreText:
+      'Warm to the touch, this crystalline heart regulated the geothermal conduits that powered the civilization’s stone mechanisms.',
+  },
+  {
+    id: 'fragment-5',
+    name: 'Echo of Eternity',
+    description: 'Fifth Ancient Fragment resting atop the Heart of the Spire.',
+    iconId: 'fragment',
+    category: 'fragment',
+    levelOfOrigin: 'level5',
+    loreText:
+      'The keystone resonance that binds the four elements together, sealing the memory of why the islanders chose to slumber.',
+  },
+];
+
+export const ITEM_CATALOG: Record<string, InventoryItemDefinition> = {
+  'crystal-shard': {
+    id: 'crystal-shard',
+    name: 'Resonant Crystal',
+    description: 'Luminous energy shard scattered across the island.',
+    iconId: 'crystal',
+    category: 'crystal',
+    levelOfOrigin: 'global',
+  },
+  'key-sanctuary': {
+    id: 'key-sanctuary',
+    name: 'Sunstone Vault Key',
+    description: 'Ancient bronze key that unlocks the Forgotten Shore side vault.',
+    iconId: 'key',
+    category: 'key',
+    levelOfOrigin: 'level1',
+  },
+  'relic-sunstone-compass': {
+    id: 'relic-sunstone-compass',
+    name: 'Sunstone Compass',
+    description: 'A brass maritime relic hidden deep within the Sea Cave.',
+    iconId: 'compass',
+    category: 'relic',
+    levelOfOrigin: 'level1',
+  },
+  'key-canopy': {
+    id: 'key-canopy',
+    name: 'Wind-Carved Key',
+    description: 'Jade-inlaid key suspended above the Whispering Canopy.',
+    iconId: 'key',
+    category: 'key',
+    levelOfOrigin: 'level2',
+  },
+  'relic-gale-chime': {
+    id: 'relic-gale-chime',
+    name: 'Gale Chime Relic',
+    description: 'A resonant bronze wind-bell preserved in the Elder Boughs.',
+    iconId: 'relic',
+    category: 'relic',
+    levelOfOrigin: 'level2',
+  },
+  'key-observatory': {
+    id: 'key-observatory',
+    name: 'Tidal Vault Key',
+    description: 'Silvered key opening the Sunken Observatory side archive.',
+    iconId: 'key',
+    category: 'key',
+    levelOfOrigin: 'level3',
+  },
+  'relic-astrolabe-lens': {
+    id: 'relic-astrolabe-lens',
+    name: 'Astrolabe Lens',
+    description: 'Polished quartz prism calibrated to submerged constellations.',
+    iconId: 'compass',
+    category: 'relic',
+    levelOfOrigin: 'level3',
+  },
+  'key-caldera': {
+    id: 'key-caldera',
+    name: 'Obsidian Seal Key',
+    description: 'Volcanic glass key forged beside the Obsidian Caldera vents.',
+    iconId: 'key',
+    category: 'key',
+    levelOfOrigin: 'level4',
+  },
+  'relic-ember-core': {
+    id: 'relic-ember-core',
+    name: 'Ember Core',
+    description: 'Contained geothermal crystal from the Caldera western ridge.',
+    iconId: 'relic',
+    category: 'relic',
+    levelOfOrigin: 'level4',
+  },
+  'key-spire': {
+    id: 'key-spire',
+    name: 'Spire Keystone',
+    description: 'Gilded keystone unlocking the Spire Resonance Vault.',
+    iconId: 'key',
+    category: 'key',
+    levelOfOrigin: 'level5',
+  },
+  'relic-eternity-diadem': {
+    id: 'relic-eternity-diadem',
+    name: 'Eternity Diadem',
+    description: 'Ceremonial crown kept atop the Skyward Resonance Terrace.',
+    iconId: 'relic',
+    category: 'relic',
+    levelOfOrigin: 'level5',
+  },
+  'relic-test-waystone': {
+    id: 'relic-test-waystone',
+    name: 'Explorer Waystone',
+    description: 'A ceremonial surveyor stone inscribed with island coordinates.',
+    iconId: 'relic',
+    category: 'relic',
+    levelOfOrigin: 'global',
+  },
+  ...Object.fromEntries(ANCIENT_FRAGMENTS.map((frag) => [frag.id, frag])),
+};
+
+export function resolveItemDefinition(
+  idOrName: string,
+  overrides?: Partial<InventoryItemDefinition>,
+): InventoryItemDefinition {
+  const byId = ITEM_CATALOG[idOrName];
+  if (byId) {
+    return overrides ? { ...byId, ...overrides } : byId;
+  }
+
+  const byName = Object.values(ITEM_CATALOG).find(
+    (entry) => entry.name.toLowerCase() === idOrName.toLowerCase(),
+  );
+  if (byName) {
+    return overrides ? { ...byName, ...overrides } : byName;
+  }
+
+  return {
+    id: idOrName,
+    name: overrides?.name ?? idOrName,
+    description:
+      overrides?.description ?? 'Recovered artifact from the lost island.',
+    iconId: overrides?.iconId ?? 'relic',
+    category: overrides?.category ?? 'relic',
+    levelOfOrigin: overrides?.levelOfOrigin ?? 'level1',
+    loreText: overrides?.loreText,
+  };
+}
+
+export function addItemToInventory(
+  inventory: InventoryItem[],
+  idOrName: string,
+  amount = 1,
+  overrides?: Partial<InventoryItemDefinition>,
+): InventoryItem[] {
+  const def = resolveItemDefinition(idOrName, overrides);
+  const existingIndex = inventory.findIndex((item) => item.id === def.id);
+  if (existingIndex === -1) {
+    return [...inventory, { ...def, quantity: Math.max(1, amount) }];
+  }
+
+  // Fragments and unique keys/relics stay singular unless stackable crystals
+  const existing = inventory[existingIndex];
+  const nextQuantity =
+    def.category === 'crystal'
+      ? existing.quantity + Math.max(1, amount)
+      : def.category === 'key'
+        ? existing.quantity + Math.max(1, amount)
+        : existing.quantity;
+
+  if (nextQuantity === existing.quantity) {
+    return inventory;
+  }
+
+  return inventory.map((item, idx) =>
+    idx === existingIndex ? { ...item, quantity: nextQuantity } : item,
+  );
+}
+
+export function consumeItemFromInventory(
+  inventory: InventoryItem[],
+  itemId: string,
+  amount = 1,
+): { nextInventory: InventoryItem[]; consumed: boolean } {
+  const idx = inventory.findIndex((item) => item.id === itemId);
+  if (idx === -1) {
+    return { nextInventory: inventory, consumed: false };
+  }
+
+  const current = inventory[idx];
+  const remaining = current.quantity - amount;
+  if (remaining <= 0) {
+    return {
+      nextInventory: inventory.filter((item) => item.id !== itemId),
+      consumed: true,
+    };
+  }
+
+  return {
+    nextInventory: inventory.map((item, i) =>
+      i === idx ? { ...item, quantity: remaining } : item,
+    ),
+    consumed: true,
+  };
+}
+
+export function hasInventoryItem(
+  inventory: InventoryItem[],
+  itemId: string,
+): boolean {
+  return inventory.some((item) => item.id === itemId && item.quantity > 0);
+}
