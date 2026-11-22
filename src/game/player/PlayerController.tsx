@@ -42,10 +42,12 @@ const COLLIDER_CENTER_Y = CAPSULE_HALF_HEIGHT + CAPSULE_RADIUS; // 0.80m above f
 
 export interface PlayerControllerProps {
   spawnPosition?: [number, number, number];
+  levelMounted?: boolean;
 }
 
 export function PlayerController({
   spawnPosition = [0, 0.95, 8],
+  levelMounted = true,
 }: PlayerControllerProps) {
   const { world } = useRapier();
   const { sampleInput } = usePlayerInput();
@@ -82,6 +84,7 @@ export function PlayerController({
   const animStateRef = useRef(createExplorerAnimState());
   const staminaRef = useRef<StaminaState>({ value: 100, exhausted: false });
   const pendingTeleportRef = useRef<[number, number, number] | null>(null);
+  const wasMountedRef = useRef(levelMounted);
 
   useEffect(() => {
     const controller = createExplorerCharacterController(world);
@@ -128,6 +131,35 @@ export function PlayerController({
     playerTelemetry.playerColliderHandle = collider.handle;
 
     const state = useGameStore.getState();
+    if (!levelMounted) {
+      wasMountedRef.current = false;
+      const sx = spawnPosition[0];
+      const sy = spawnPosition[1] + COLLIDER_CENTER_Y;
+      const sz = spawnPosition[2];
+      body.setTranslation({ x: sx, y: sy, z: sz }, true);
+      body.setNextKinematicTranslation({ x: sx, y: sy, z: sz });
+      horizVelRef.current.x = 0;
+      horizVelRef.current.z = 0;
+      vertStateRef.current.vy = 0;
+      vertStateRef.current.grounded = false;
+      playerTelemetry.position.set(sx, spawnPosition[1], sz);
+      return;
+    }
+
+    if (!wasMountedRef.current) {
+      wasMountedRef.current = true;
+      const sx = spawnPosition[0];
+      const sy = spawnPosition[1] + COLLIDER_CENTER_Y;
+      const sz = spawnPosition[2];
+      body.setTranslation({ x: sx, y: sy, z: sz }, true);
+      body.setNextKinematicTranslation({ x: sx, y: sy, z: sz });
+      horizVelRef.current.x = 0;
+      horizVelRef.current.z = 0;
+      vertStateRef.current.vy = 0;
+      vertStateRef.current.grounded = false;
+      playerTelemetry.position.set(sx, spawnPosition[1], sz);
+    }
+
     if (state.screen !== 'playing') {
       return;
     }

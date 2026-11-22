@@ -17,11 +17,23 @@ import {
 } from '@/src/game/rendering/adaptiveQuality';
 import { SoftwareGlPacer } from '@/src/game/rendering/softwareGl';
 import { detectWebGLSupport } from '@/src/game/rendering/webglSupport';
-import { useGameStore } from '@/src/state/gameStore';
+import {
+  useGameStore,
+  type ActiveLevelId,
+} from '@/src/state/gameStore';
 import { getLevelMetadata } from '@/src/systems/progressionSystem';
 import { TestScene } from './TestScene';
 
 const TEST_ARENA_SPAWN: [number, number, number] = [0, 0.95, 8];
+
+const LEVEL_BG_CLASSES: Record<ActiveLevelId, string> = {
+  testArena: 'bg-[#9ec9e2]',
+  level1: 'bg-[#94cbe8]',
+  level2: 'bg-[#122e26]',
+  level3: 'bg-[#050c10]',
+  level4: 'bg-[#5b4036]',
+  level5: 'bg-[#c2d8ef]',
+};
 
 function SceneSuspenseBeacon() {
   return (
@@ -30,6 +42,19 @@ function SceneSuspenseBeacon() {
       <meshBasicMaterial color="#2dd4bf" wireframe />
     </mesh>
   );
+}
+
+function LevelReadyReporter({
+  readyKey,
+  onReady,
+}: {
+  readyKey: string;
+  onReady: (key: string) => void;
+}) {
+  useEffect(() => {
+    onReady(readyKey);
+  }, [readyKey, onReady]);
+  return null;
 }
 
 export function GameCanvas() {
@@ -51,6 +76,11 @@ export function GameCanvas() {
   );
   const [canvasEl, setCanvasEl] = useState<HTMLCanvasElement | null>(null);
   const [envTexture, setEnvTexture] = useState<THREE.Texture | null>(null);
+  const [readyKey, setReadyKey] = useState<string | null>(null);
+  const [minLoadElapsed, setMinLoadElapsed] = useState(true);
+
+  const expectedReadyKey = `${activeLevel}-${runId}`;
+  const levelMounted = readyKey === expectedReadyKey;
 
   useEffect(() => {
     const onVis = () => {
@@ -107,12 +137,22 @@ export function GameCanvas() {
   }, [activeLevel, runId]);
 
   useEffect(() => {
-    if (!levelLoading) return;
+    if (!levelLoading) {
+      setMinLoadElapsed(true);
+      return;
+    }
+    setMinLoadElapsed(false);
     const timer = window.setTimeout(() => {
-      finishLevelLoading();
+      setMinLoadElapsed(true);
     }, 450);
     return () => window.clearTimeout(timer);
-  }, [levelLoading, finishLevelLoading]);
+  }, [levelLoading, expectedReadyKey]);
+
+  useEffect(() => {
+    if (levelLoading && minLoadElapsed && levelMounted) {
+      finishLevelLoading();
+    }
+  }, [levelLoading, minLoadElapsed, levelMounted, finishLevelLoading]);
 
   const preset = getQualityPreset(activeQualityTier, deviceProfile);
   const isPausedForRendering =
@@ -159,7 +199,7 @@ export function GameCanvas() {
 
   return (
     <div
-      className="relative h-full w-full bg-[#94cbe8]"
+      className={`relative h-full w-full ${LEVEL_BG_CLASSES[activeLevel]}`}
       data-testid="canvas-container"
     >
       {contextLost && (
@@ -227,16 +267,23 @@ export function GameCanvas() {
               screen !== 'playing' ||
               activeOverlay !== 'none' ||
               levelLoading ||
+              !levelMounted ||
               documentHidden
             }
           >
             <RenderPerformanceController />
             <Suspense fallback={<SceneSuspenseBeacon />}>
               <ActiveLevelComponent key={activeLevel} />
+              <LevelReadyReporter
+                key={expectedReadyKey}
+                readyKey={expectedReadyKey}
+                onReady={setReadyKey}
+              />
             </Suspense>
             <PlayerController
-              key={`${activeLevel}-${runId}`}
+              key={expectedReadyKey}
               spawnPosition={spawnPosition}
+              levelMounted={levelMounted}
             />
             <ThirdPersonCamera />
           </PhysicsWorld>

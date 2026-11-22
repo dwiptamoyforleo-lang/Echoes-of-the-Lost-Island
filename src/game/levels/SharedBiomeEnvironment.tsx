@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Sky } from '@react-three/drei';
 import { CylinderCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -106,6 +106,7 @@ export function GlowHalo({
 }
 
 export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
+  const { scene } = useThree();
   const activeTier = useGameStore((s) => s.activeQualityTier);
   const preset = getQualityPreset(activeTier);
   const palette = LEVEL_BIOMES[levelId];
@@ -211,10 +212,30 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
   const fogNear = Math.round(palette.fogNear * preset.fogScale);
   const fogFar = Math.round(palette.fogFar * preset.fogScale);
 
+  // Attach background, fog, and IBL intensity directly onto THREE.Scene
+  // (R3F <color attach="background"> inside a level <group> would otherwise attach to the Group!)
+  useEffect(() => {
+    scene.background = new THREE.Color(palette.skyColor);
+    scene.fog = new THREE.Fog(palette.fogColor, fogNear, fogFar);
+    scene.environmentIntensity = palette.environmentIntensity ?? 0.45;
+    return () => {
+      scene.fog = null;
+      scene.environmentIntensity = 0.45;
+    };
+  }, [
+    scene,
+    palette.skyColor,
+    palette.fogColor,
+    palette.environmentIntensity,
+    fogNear,
+    fogFar,
+  ]);
+
+  const showClouds = palette.showClouds !== false && !preset.simpleWaterAndSky;
+  const showOcean = palette.showOcean !== false;
+
   return (
     <>
-      <color attach="background" args={[palette.skyColor]} />
-      <fog attach="fog" args={[palette.fogColor, fogNear, fogFar]} />
       {palette.useSkyDome && !preset.simpleWaterAndSky && (
         <Sky
           distance={450}
@@ -247,7 +268,7 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
         shadow-normalBias={0.02}
       />
 
-      {!preset.simpleWaterAndSky && (
+      {showClouds && (
         <group ref={cloudGroupRef} position={[0, 32, -25]}>
           {[
             [-26, 0, -10, 1.3],
@@ -269,12 +290,14 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
       )}
 
       {/* Sea / Basin Surface */}
-      <mesh
-        geometry={oceanGeo}
-        material={oceanMat}
-        position={[0, 0, 0]}
-        receiveShadow={preset.shadowsEnabled}
-      />
+      {showOcean && (
+        <mesh
+          geometry={oceanGeo}
+          material={oceanMat}
+          position={[0, 0, 0]}
+          receiveShadow={preset.shadowsEnabled}
+        />
+      )}
     </>
   );
 }

@@ -4,6 +4,18 @@ import { acquireGeometry } from '@/src/game/rendering/assetCache';
 import type { LevelId } from '@/src/systems/progressionSystem';
 import type { ChunkDefinition } from './chunkStreaming';
 import { classifyTerrainBiome, getIslandHeight, LEVEL1_CRYSTALS, LEVEL1_SPAWN } from './level1Terrain';
+import {
+  getWoodsHeight,
+  LEVEL2_CHUNKS,
+  LEVEL2_CRYSTALS,
+  LEVEL2_SPAWN,
+} from './level2Config';
+import {
+  getSunkenKingdomHeight,
+  LEVEL3_CHUNKS,
+  LEVEL3_CRYSTALS,
+  LEVEL3_SPAWN,
+} from './level3Config';
 
 export interface TerrainPatchBounds {
   minX: number;
@@ -42,6 +54,9 @@ export interface BiomePalette {
   crystalColor: string;
   useSkyDome: boolean;
   sunPosition: [number, number, number];
+  environmentIntensity?: number;
+  showClouds?: boolean;
+  showOcean?: boolean;
 }
 
 export const LEVEL_BIOMES: Record<LevelId, BiomePalette> = {
@@ -68,54 +83,63 @@ export const LEVEL_BIOMES: Record<LevelId, BiomePalette> = {
     crystalColor: '#38bdf8',
     useSkyDome: true,
     sunPosition: [60, 42, 35],
+    environmentIntensity: 0.48,
+    showClouds: true,
+    showOcean: true,
   },
   level2: {
-    skyColor: '#a8dec8',
-    fogColor: '#a6d9c4',
-    fogNear: 42,
-    fogFar: 126,
-    sunColor: '#fff6d6',
-    sunIntensity: 2.25,
-    hemiSky: '#d5f7e6',
-    hemiGround: '#436345',
-    hemiIntensity: 0.85,
-    waterColor: '#258d82',
-    waterOpacity: 0.85,
-    sandLow: '#93a36d',
-    sandHigh: '#aebe7c',
-    grassBase: '#3f7f48',
-    grassLush: '#58a156',
-    rockColor: '#68736a',
-    trunkColor: '#6d4c36',
-    canopyColor: '#2e7d47',
-    grassBladeColor: '#4fa357',
-    crystalColor: '#34d399',
-    useSkyDome: true,
-    sunPosition: [45, 52, 24],
+    skyColor: '#122e26',
+    fogColor: '#173a30',
+    fogNear: 16,
+    fogFar: 68,
+    sunColor: '#c9fae0',
+    sunIntensity: 1.75,
+    hemiSky: '#6ee7b7',
+    hemiGround: '#13241a',
+    hemiIntensity: 0.62,
+    waterColor: '#157870',
+    waterOpacity: 0.86,
+    sandLow: '#2b4232',
+    sandHigh: '#395740',
+    grassBase: '#1e462d',
+    grassLush: '#2d633e',
+    rockColor: '#3f4f46',
+    trunkColor: '#4a3021',
+    canopyColor: '#174f30',
+    grassBladeColor: '#338c55',
+    crystalColor: '#2dd4bf',
+    useSkyDome: false,
+    sunPosition: [42, 54, 22],
+    environmentIntensity: 0.25,
+    showClouds: false,
+    showOcean: true,
   },
   level3: {
-    skyColor: '#8dc1da',
-    fogColor: '#8ec0d6',
-    fogNear: 40,
-    fogFar: 122,
-    sunColor: '#e8f4ff',
-    sunIntensity: 2.1,
-    hemiSky: '#bce2f7',
-    hemiGround: '#445d6e',
-    hemiIntensity: 0.8,
-    waterColor: '#166f94',
-    waterOpacity: 0.86,
-    sandLow: '#8ea3aa',
-    sandHigh: '#b3c3c7',
-    grassBase: '#4c7c77',
-    grassLush: '#62988d',
-    rockColor: '#627380',
-    trunkColor: '#5c6b75',
-    canopyColor: '#3a7a78',
-    grassBladeColor: '#54938d',
-    crystalColor: '#60a5fa',
-    useSkyDome: true,
-    sunPosition: [-35, 48, 30],
+    skyColor: '#050c10',
+    fogColor: '#07151b',
+    fogNear: 10,
+    fogFar: 44,
+    sunColor: '#7dd3fc',
+    sunIntensity: 0.42,
+    hemiSky: '#2dd4bf',
+    hemiGround: '#091318',
+    hemiIntensity: 0.35,
+    waterColor: '#0e7490',
+    waterOpacity: 0.8,
+    sandLow: '#22303a',
+    sandHigh: '#2f414d',
+    grassBase: '#273640',
+    grassLush: '#324652',
+    rockColor: '#1e2932',
+    trunkColor: '#374752',
+    canopyColor: '#244047',
+    grassBladeColor: '#316062',
+    crystalColor: '#38bdf8',
+    useSkyDome: false,
+    sunPosition: [-25, 42, 24],
+    environmentIntensity: 0.14,
+    showClouds: false,
+    showOcean: false,
   },
   level4: {
     skyColor: '#5b4036',
@@ -140,6 +164,9 @@ export const LEVEL_BIOMES: Record<LevelId, BiomePalette> = {
     crystalColor: '#fb923c',
     useSkyDome: false,
     sunPosition: [30, 38, -28],
+    environmentIntensity: 0.28,
+    showClouds: false,
+    showOcean: true,
   },
   level5: {
     skyColor: '#c2d8ef',
@@ -164,6 +191,9 @@ export const LEVEL_BIOMES: Record<LevelId, BiomePalette> = {
     crystalColor: '#e879f9',
     useSkyDome: true,
     sunPosition: [40, 56, 20],
+    environmentIntensity: 0.45,
+    showClouds: true,
+    showOcean: true,
   },
 };
 
@@ -271,9 +301,9 @@ export function getLevelHeight(levelId: LevelId, x: number, z: number): number {
     case 'level1':
       return getIslandHeight(x, z);
     case 'level2':
-      return getCanopyHeight(x, z);
+      return getWoodsHeight(x, z);
     case 'level3':
-      return getObservatoryHeight(x, z);
+      return getSunkenKingdomHeight(x, z);
     case 'level4':
       return getCalderaHeight(x, z);
     case 'level5':
@@ -286,9 +316,9 @@ export function getLevelSpawn(levelId: LevelId): [number, number, number] {
     case 'level1':
       return LEVEL1_SPAWN;
     case 'level2':
-      return [0, getCanopyHeight(0, 26) + 0.5, 26];
+      return LEVEL2_SPAWN;
     case 'level3':
-      return [0, getObservatoryHeight(0, 26) + 0.5, 26];
+      return LEVEL3_SPAWN;
     case 'level4':
       return [0, getCalderaHeight(0, 26) + 0.5, 26];
     case 'level5':
@@ -361,109 +391,8 @@ export const LEVEL_CHUNKS: Record<LevelId, readonly LevelTerrainChunkSpec[]> = {
       patch: { minX: -14, maxX: 14, minZ: -52, maxZ: -6, step: 2 },
     },
   ],
-  level2: [
-    {
-      chunk: {
-        id: 'l2-entry',
-        label: 'Emerald Trailhead',
-        center: [0, 2.5, 20],
-        boundsRadius: 15,
-        loadRadius: 32,
-        unloadRadius: 40,
-        heavy: true,
-      },
-      patch: { minX: -14, maxX: 14, minZ: -6, maxZ: 52, step: 2 },
-      includeWaterInChunk: true,
-    },
-    {
-      chunk: {
-        id: 'l2-west-boughs',
-        label: 'Elder Bough Terrace',
-        center: [-24, 5, 4],
-        boundsRadius: 15,
-        loadRadius: 33,
-        unloadRadius: 41,
-        heavy: true,
-      },
-      patch: { minX: -52, maxX: -14, minZ: -52, maxZ: 52, step: 2 },
-    },
-    {
-      chunk: {
-        id: 'l2-east-bridge',
-        label: 'Suspended Wind Bridge',
-        center: [24, 5, 2],
-        boundsRadius: 15,
-        loadRadius: 33,
-        unloadRadius: 41,
-        heavy: true,
-      },
-      patch: { minX: 14, maxX: 52, minZ: -52, maxZ: 52, step: 2 },
-    },
-    {
-      chunk: {
-        id: 'l2-wind-shrine',
-        label: 'Canopy Wind Sanctum',
-        center: [0, 5, -24],
-        boundsRadius: 16,
-        loadRadius: 32,
-        unloadRadius: 40,
-        heavy: true,
-      },
-      patch: { minX: -14, maxX: 14, minZ: -52, maxZ: -6, step: 2 },
-    },
-  ],
-  level3: [
-    {
-      chunk: {
-        id: 'l3-causeway',
-        label: 'Tidal Causeway',
-        center: [0, 2.5, 20],
-        boundsRadius: 15,
-        loadRadius: 32,
-        unloadRadius: 40,
-        heavy: true,
-      },
-      patch: { minX: -14, maxX: 14, minZ: -6, maxZ: 52, step: 2 },
-      includeWaterInChunk: true,
-    },
-    {
-      chunk: {
-        id: 'l3-lens-west',
-        label: 'Western Lens Deck',
-        center: [-24, 4, 4],
-        boundsRadius: 15,
-        loadRadius: 33,
-        unloadRadius: 41,
-        heavy: true,
-      },
-      patch: { minX: -52, maxX: -14, minZ: -52, maxZ: 52, step: 2 },
-    },
-    {
-      chunk: {
-        id: 'l3-vault-east',
-        label: 'Flooded Astrolabe Vault',
-        center: [24, 3.5, -2],
-        boundsRadius: 15,
-        loadRadius: 33,
-        unloadRadius: 41,
-        heavy: true,
-        isInterior: true,
-      },
-      patch: { minX: 14, maxX: 52, minZ: -52, maxZ: 52, step: 2 },
-    },
-    {
-      chunk: {
-        id: 'l3-star-sanctum',
-        label: 'Starlight Sanctum',
-        center: [0, 4.6, -24],
-        boundsRadius: 16,
-        loadRadius: 32,
-        unloadRadius: 40,
-        heavy: true,
-      },
-      patch: { minX: -14, maxX: 14, minZ: -52, maxZ: -6, step: 2 },
-    },
-  ],
+  level2: LEVEL2_CHUNKS,
+  level3: LEVEL3_CHUNKS,
   level4: [
     {
       chunk: {
@@ -579,20 +508,6 @@ function makeCrystalsFromCoords(
     position: [x, (fixedY ?? getLevelHeight(levelId, x, z)) + 0.85, z],
   }));
 }
-
-export const LEVEL2_CRYSTALS: CrystalSpec[] = makeCrystalsFromCoords('l2', 'level2', [
-  [0, 20], [-4, 16], [4, 15], [0, 10], [-6, 6],
-  [6, 4], [-15, 5], [-20, 7], [-23, 1], [-21, -5],
-  [10, 2], [20, -3], [23, 3], [21, 9], [16, -9],
-  [-4, -15, 5.2], [4, -15, 5.2], [-6.5, -24, 5.2], [6.5, -24, 5.2], [0, -18, 5.2],
-]);
-
-export const LEVEL3_CRYSTALS: CrystalSpec[] = makeCrystalsFromCoords('l3', 'level3', [
-  [0, 20], [-4.5, 16], [4.5, 15], [0, 9], [-7, 5],
-  [7, 4], [-16, 4], [-21, 7], [-24, 1], [-20, -6],
-  [12, 2], [20, -2], [24, -6], [21, -10], [18, 8],
-  [-4.5, -16, 4.6], [4.5, -16, 4.6], [-6.5, -25, 4.6], [6.5, -25, 4.6], [0, -19, 4.6],
-]);
 
 export const LEVEL4_CRYSTALS: CrystalSpec[] = makeCrystalsFromCoords('l4', 'level4', [
   [0, 20], [-4, 16], [4, 15], [0, 10], [-6, 5],
