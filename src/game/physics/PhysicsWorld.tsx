@@ -1,7 +1,24 @@
-import type { ReactNode } from 'react';
-import { Physics } from '@react-three/rapier';
+import { useEffect, type ReactNode } from 'react';
+import { Physics, useRapier } from '@react-three/rapier';
 import { getQualityPreset } from '@/src/game/rendering/adaptiveQuality';
 import { useGameStore } from '@/src/state/gameStore';
+
+let loggedRapierInit = false;
+
+function RapierInitLogger() {
+  const { rapier } = useRapier();
+
+  useEffect(() => {
+    if (!loggedRapierInit && rapier) {
+      loggedRapierInit = true;
+      console.info(
+        `[Echoes] rapier=initialized (${rapier.version?.() ?? 'wasm-ready'})`,
+      );
+    }
+  }, [rapier]);
+
+  return null;
+}
 
 export interface PhysicsWorldProps {
   children: ReactNode;
@@ -20,6 +37,7 @@ export function PhysicsWorld({ children, paused = false }: PhysicsWorldProps) {
       timeStep={timeStep}
       maxCcdSubsteps={1}
     >
+      <RapierInitLogger />
       {children}
     </Physics>
   );

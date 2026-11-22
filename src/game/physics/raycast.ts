@@ -5,7 +5,7 @@ import * as THREE from 'three';
 const _dir = new THREE.Vector3();
 const _rayOrigin = { x: 0, y: 0, z: 0 };
 const _rayDir = { x: 0, y: 0, z: 1 };
-const _rapierRay = new Ray(_rayOrigin, _rayDir);
+let _rapierRay: Ray | null = null;
 
 /**
  * Raycasts from the player focus anchor toward the desired camera position
@@ -27,6 +27,9 @@ export function resolveCameraDistanceWithRaycast(
   }
   _dir.divideScalar(fullDist);
 
+  if (!_rapierRay) {
+    _rapierRay = new Ray(_rayOrigin, _rayDir);
+  }
   _rapierRay.origin.x = origin.x;
   _rapierRay.origin.y = origin.y;
   _rapierRay.origin.z = origin.z;

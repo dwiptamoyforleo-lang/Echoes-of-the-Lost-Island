@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
@@ -14,6 +14,19 @@ import {
   resolveInitialTier,
 } from './adaptiveQuality';
 import { performanceTelemetry } from './performanceTelemetry';
+
+function ComposerPassRunner({
+  composerRef,
+}: {
+  composerRef: { current: EffectComposer | null };
+}) {
+  useFrame(() => {
+    if (composerRef.current) {
+      composerRef.current.render();
+    }
+  }, 1);
+  return null;
+}
 
 export function RenderPerformanceController() {
   const { gl, scene, camera, size, setDpr } = useThree();
@@ -35,6 +48,7 @@ export function RenderPerformanceController() {
   const telemetryTimerRef = useRef(0);
   const composerRef = useRef<EffectComposer | null>(null);
   const bloomPassRef = useRef<UnrealBloomPass | null>(null);
+  const [composerReady, setComposerReady] = useState(false);
 
   // Sync manual or Auto initial tier whenever graphicsQuality preference changes
   useEffect(() => {
@@ -61,6 +75,7 @@ export function RenderPerformanceController() {
         composerRef.current = null;
         bloomPassRef.current = null;
       }
+      setComposerReady(false);
       return;
     }
 
@@ -80,8 +95,10 @@ export function RenderPerformanceController() {
 
     composerRef.current = composer;
     bloomPassRef.current = bloomPass;
+    setComposerReady(true);
 
     return () => {
+      setComposerReady(false);
       bloomPass.dispose();
       outputPass.dispose();
       composer.dispose();
@@ -98,7 +115,7 @@ export function RenderPerformanceController() {
     if (bloomPassRef.current) {
       bloomPassRef.current.resolution.set(size.width, size.height);
     }
-  }, [size.width, size.height]);
+  }, [size.width, size.height, composerReady]);
 
   useFrame((_, rawDt) => {
     const profile = profileRef.current;
@@ -150,12 +167,5 @@ export function RenderPerformanceController() {
     }
   });
 
-  // Run EffectComposer pass at priority 1 ONLY when enabled
-  useFrame(() => {
-    if (composerRef.current) {
-      composerRef.current.render();
-    }
-  }, 1);
-
-  return null;
+  return composerReady ? <ComposerPassRunner composerRef={composerRef} /> : null;
 }

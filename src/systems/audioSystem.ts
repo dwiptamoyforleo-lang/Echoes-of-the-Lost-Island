@@ -29,7 +29,8 @@ function getOrCreateAudioContext(): AudioContext | null {
   if (!audioCtx) {
     try {
       audioCtx = new Ctor();
-    } catch {
+    } catch (err) {
+      console.warn('[Echoes] AudioContext unavailable, continuing silently:', err);
       return null;
     }
   }
@@ -53,8 +54,8 @@ export function applyAudioSettings(volumes: Partial<AudioVolumes>): void {
   if (typeof window !== 'undefined') {
     try {
       Howler.volume(currentVolumes.masterVolume);
-    } catch {
-      // Ignore Howler errors in restricted headless environments
+    } catch (err) {
+      console.warn('[Echoes] Howler volume adjustment skipped:', err);
     }
   }
 }

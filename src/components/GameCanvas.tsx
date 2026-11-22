@@ -16,13 +16,24 @@ import {
   getQualityPreset,
 } from '@/src/game/rendering/adaptiveQuality';
 import { SoftwareGlPacer } from '@/src/game/rendering/softwareGl';
+import { detectWebGLSupport } from '@/src/game/rendering/webglSupport';
 import { useGameStore } from '@/src/state/gameStore';
 import { getLevelMetadata } from '@/src/systems/progressionSystem';
 import { TestScene } from './TestScene';
 
 const TEST_ARENA_SPAWN: [number, number, number] = [0, 0.95, 8];
 
+function SceneSuspenseBeacon() {
+  return (
+    <mesh position={[0, 2, 0]} rotation={[0.4, 0.6, 0]}>
+      <octahedronGeometry args={[0.9, 0]} />
+      <meshBasicMaterial color="#2dd4bf" wireframe />
+    </mesh>
+  );
+}
+
 export function GameCanvas() {
+  const webglSupport = useMemo(() => detectWebGLSupport(), []);
   const deviceProfile = useMemo(() => detectDeviceProfile(), []);
   const isSoftwareGl = deviceProfile.isSoftwareGl;
 
@@ -69,9 +80,11 @@ export function GameCanvas() {
 
     const handleContextLost = (event: Event) => {
       event.preventDefault();
+      console.warn('[Echoes] WebGL context lost');
       setContextLost(true);
     };
     const handleContextRestored = () => {
+      console.info('[Echoes] WebGL context restored');
       setContextLost(false);
     };
 
@@ -108,37 +121,90 @@ export function GameCanvas() {
   const ActiveLevelComponent =
     activeLevel === 'testArena' ? TestScene : LazyLevels[activeLevel];
 
+  if (!webglSupport.supported) {
+    return (
+      <div
+        className="relative flex h-full w-full items-center justify-center bg-[#12181a] p-6 text-[#efe5cf]"
+        data-testid="webgl-unavailable-fallback"
+        role="alert"
+      >
+        <div className="stone-panel max-w-md rounded-md p-6 text-center">
+          <p className="font-mono text-xs tracking-widest text-[#c79d52] uppercase">
+            WebGL Unavailable
+          </p>
+          <h2 className="font-display mt-2 text-xl font-bold text-[#f7ebd2]">
+            3D Graphics Context Required
+          </h2>
+          <p className="mt-2 text-xs leading-relaxed text-[#cfc3aa]">
+            Echoes of the Lost Island requires WebGL to render the island world.
+            Enable hardware acceleration in your browser settings, update graphics
+            drivers, or try a modern Chromium/Firefox/Safari browser.
+          </p>
+          {webglSupport.reason && (
+            <p className="mt-2 font-mono text-[11px] text-amber-200/80">
+              {webglSupport.reason}
+            </p>
+          )}
+          <button
+            type="button"
+            onClick={() => window.location.reload()}
+            className="bronze-btn mt-4 rounded px-4 py-2 text-xs font-semibold"
+          >
+            Retry WebGL Check
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div
       className="relative h-full w-full bg-[#94cbe8]"
       data-testid="canvas-container"
     >
-      {contextLost ? (
-        <div className="flex h-full w-full items-center justify-center text-slate-900">
-          <p className="text-sm font-medium">
-            Restoring 3D graphics context...
-          </p>
+      {contextLost && (
+        <div
+          className="absolute inset-0 z-30 flex items-center justify-center bg-[#12181a]/90 p-6 text-[#efe5cf]"
+          data-testid="webgl-context-lost"
+        >
+          <div className="stone-panel max-w-sm rounded-md p-6 text-center">
+            <h2 className="font-display text-lg font-bold text-[#f7ebd2]">
+              Restoring 3D Graphics Context
+            </h2>
+            <p className="mt-2 text-xs text-[#cfc3aa]">
+              Your GPU driver reset the WebGL context. Waiting for automatic recovery...
+            </p>
+            <button
+              type="button"
+              onClick={() => window.location.reload()}
+              className="bronze-btn mt-4 rounded px-4 py-2 text-xs font-semibold"
+            >
+              Reload Page
+            </button>
+          </div>
         </div>
-      ) : (
-        <Canvas
-          className="block h-full w-full"
-          frameloop={isSoftwareGl || isPausedForRendering ? 'demand' : 'always'}
-          shadows={preset.shadowsEnabled}
-          dpr={isSoftwareGl ? 1 : [preset.minDpr, preset.maxDpr]}
-          camera={{ position: [0.55, 4.2, 30], fov: 52, near: 0.1, far: 360 }}
-          gl={{
-            antialias: preset.antialias,
-            powerPreference: 'high-performance',
-          }}
-          onCreated={({ gl, scene }) => {
-            gl.outputColorSpace = THREE.SRGBColorSpace;
-            gl.toneMapping = THREE.ACESFilmicToneMapping;
-            gl.toneMappingExposure = 1.1;
-            if (!isSoftwareGl && preset.shadowsEnabled) {
-              gl.shadowMap.enabled = true;
-              gl.shadowMap.type = THREE.PCFSoftShadowMap;
-            }
+      )}
 
+      <Canvas
+        className="block h-full w-full"
+        frameloop={isSoftwareGl || isPausedForRendering ? 'demand' : 'always'}
+        shadows={preset.shadowsEnabled}
+        dpr={isSoftwareGl ? 1 : [preset.minDpr, preset.maxDpr]}
+        camera={{ position: [0.55, 4.2, 30], fov: 52, near: 0.1, far: 360 }}
+        gl={{
+          antialias: preset.antialias,
+          powerPreference: 'high-performance',
+        }}
+        onCreated={({ gl, scene }) => {
+          gl.outputColorSpace = THREE.SRGBColorSpace;
+          gl.toneMapping = THREE.ACESFilmicToneMapping;
+          gl.toneMappingExposure = 1.1;
+          if (!isSoftwareGl && preset.shadowsEnabled) {
+            gl.shadowMap.enabled = true;
+            gl.shadowMap.type = THREE.PCFSoftShadowMap;
+          }
+
+          try {
             const pmremGenerator = new THREE.PMREMGenerator(gl);
             const tex = pmremGenerator.fromScene(
               new RoomEnvironment(),
@@ -147,31 +213,35 @@ export function GameCanvas() {
             scene.environment = tex;
             setEnvTexture(tex);
             pmremGenerator.dispose();
+          } catch (err) {
+            console.warn('[Echoes] RoomEnvironment PMREM skipped:', err);
+          }
 
-            setCanvasEl(gl.domElement);
-          }}
-        >
-          <SoftwareGlPacer enabled={isSoftwareGl && !isPausedForRendering} />
-          <Suspense fallback={null}>
-            <PhysicsWorld
-              paused={
-                screen !== 'playing' ||
-                activeOverlay !== 'none' ||
-                levelLoading ||
-                documentHidden
-              }
-            >
-              <RenderPerformanceController />
+          setCanvasEl(gl.domElement);
+        }}
+      >
+        {isSoftwareGl && !isPausedForRendering && <SoftwareGlPacer enabled />}
+        <Suspense fallback={<SceneSuspenseBeacon />}>
+          <PhysicsWorld
+            paused={
+              screen !== 'playing' ||
+              activeOverlay !== 'none' ||
+              levelLoading ||
+              documentHidden
+            }
+          >
+            <RenderPerformanceController />
+            <Suspense fallback={<SceneSuspenseBeacon />}>
               <ActiveLevelComponent key={activeLevel} />
-              <PlayerController
-                key={`${activeLevel}-${runId}`}
-                spawnPosition={spawnPosition}
-              />
-              <ThirdPersonCamera />
-            </PhysicsWorld>
-          </Suspense>
-        </Canvas>
-      )}
+            </Suspense>
+            <PlayerController
+              key={`${activeLevel}-${runId}`}
+              spawnPosition={spawnPosition}
+            />
+            <ThirdPersonCamera />
+          </PhysicsWorld>
+        </Suspense>
+      </Canvas>
     </div>
   );
 }

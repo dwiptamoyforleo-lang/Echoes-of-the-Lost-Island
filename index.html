@@ -9,6 +9,7 @@
     <meta property="og:description" content="A stylized third-person 3D adventure on an ancient island." />
     <meta property="og:type" content="website" />
     <meta name="twitter:card" content="summary_large_image" />
+    <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -16,8 +17,57 @@
       rel="stylesheet"
     />
   </head>
-  <body>
-    <div id="root"></div>
+  <body style="margin:0;background-color:#12181a;color:#efe5cf;">
+    <div id="root">
+      <div
+        id="pre-react-loader"
+        style="position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;background:radial-gradient(circle at 50% 45%,#1b2629 0%,#0f1517 100%);font-family:system-ui,-apple-system,sans-serif;"
+      >
+        <div
+          style="width:42px;height:42px;border-radius:9999px;border:2px solid rgba(199,157,82,0.3);border-top-color:#2dd4bf;animation:echoesSpin 1s linear infinite;margin-bottom:16px;"
+        ></div>
+        <h1 style="margin:0 0 8px;font-family:Georgia,serif;font-size:22px;letter-spacing:0.06em;color:#f7ebd2;">
+          Echoes of the Lost Island
+        </h1>
+        <p id="pre-react-status" style="margin:0;font-size:13px;color:#cfc3aa;">
+          Loading archipelago &amp; physics engine...
+        </p>
+        <div id="pre-react-timeout" style="display:none;margin-top:16px;max-width:420px;">
+          <p style="margin:0 0 12px;font-size:13px;line-height:1.5;color:#fcd34d;">
+            The game is taking longer than expected to start. Your browser may have blocked a module or failed to load WebGL.
+          </p>
+          <button
+            type="button"
+            onclick="window.location.reload()"
+            style="cursor:pointer;border-radius:6px;border:1px solid rgba(212,173,102,0.7);background:#174c47;color:#f9f1df;padding:8px 16px;font-size:13px;font-weight:600;"
+          >
+            Refresh Page
+          </button>
+        </div>
+      </div>
+      <style>
+        @keyframes echoesSpin {
+          from { transform: rotate(0deg); }
+          to { transform: rotate(360deg); }
+        }
+      </style>
+      <script>
+        setTimeout(function () {
+          var loader = document.getElementById('pre-react-loader');
+          var timeoutBox = document.getElementById('pre-react-timeout');
+          var status = document.getElementById('pre-react-status');
+          if (loader && timeoutBox) {
+            if (status) status.textContent = 'Game failed to initialize within 10 seconds.';
+            timeoutBox.style.display = 'block';
+          }
+        }, 10000);
+      </script>
+    </div>
+    <noscript>
+      <div style="padding:24px;text-align:center;color:#f7ebd2;background:#12181a;font-family:system-ui,sans-serif;">
+        Echoes of the Lost Island requires JavaScript and WebGL enabled to run.
+      </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
