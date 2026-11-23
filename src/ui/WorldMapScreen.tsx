@@ -377,8 +377,8 @@ export function WorldMapScreen() {
                 {LEVEL_CATALOG.map((lvl) => {
                   const shortLabels: Record<LevelId, string> = {
                     level1: 'Shore',
-                    level2: 'Canopy',
-                    level3: 'Observatory',
+                    level2: 'Woods',
+                    level3: 'Sunken',
                     level4: 'Caldera',
                     level5: 'Spire',
                   };

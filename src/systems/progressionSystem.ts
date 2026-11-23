@@ -43,12 +43,12 @@ export const LEVEL_CATALOG: readonly LevelMetadata[] = [
   {
     id: 'level2',
     order: 2,
-    name: 'Whispering Canopy',
+    name: 'Whispering Woods',
     description:
-      'Traverse suspended bridges and wind-carved shrines high above the emerald grove.',
+      'Explore mist-shrouded ancient woods, awaken three spirit totems in order, lower the river drawbridge, and recover the Echo of the Gale.',
     prerequisiteId: 'level1',
     nextLevelId: 'level3',
-    totalCrystals: 20,
+    totalCrystals: 25,
     totalChests: 1,
     fragmentId: 'fragment-2',
     fragmentName: 'Echo of the Gale',
@@ -56,13 +56,13 @@ export const LEVEL_CATALOG: readonly LevelMetadata[] = [
   {
     id: 'level3',
     order: 3,
-    name: 'Sunken Observatory',
+    name: 'The Sunken Kingdom',
     description:
-      'Align tidal lenses inside flooded stone vaults beneath the northern sea cliffs.',
+      'Descend into torch-lit subterranean halls, drain the flooded cistern, align the four guardian statues, and claim the Echo of the Stars.',
     prerequisiteId: 'level2',
     nextLevelId: 'level4',
-    totalCrystals: 20,
-    totalChests: 1,
+    totalCrystals: 30,
+    totalChests: 2,
     fragmentId: 'fragment-3',
     fragmentName: 'Echo of the Stars',
   },

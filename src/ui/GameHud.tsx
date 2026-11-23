@@ -57,6 +57,7 @@ export function GameHud() {
   const recoveredFragments = useGameStore((state) => state.recoveredFragments);
   const quests = useGameStore((state) => state.quests);
   const streamingPending = useGameStore((state) => state.streamingPending);
+  const underwaterTint = useGameStore((state) => state.underwaterTint);
   const toggleInventory = useGameStore((state) => state.toggleInventory);
   const toggleQuestLog = useGameStore((state) => state.toggleQuestLog);
 
@@ -103,6 +104,14 @@ export function GameHud() {
       className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4"
       data-testid="game-hud"
     >
+      {/* Visual-only underwater tint when submerged inside Level 3 Flooded Cistern */}
+      {underwaterTint && (
+        <div
+          className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-cyan-950/35 via-teal-900/40 to-cyan-950/55 transition-opacity duration-300"
+          data-testid="underwater-tint-overlay"
+        />
+      )}
+
       {/* Top Row: Fragment Tracker + Stamina (Left) | Objective & Crystals (Right) */}
       <div className="flex flex-wrap items-start justify-between gap-3">
         {/* Top-Left: 5-Slot Fragment Tracker + Stamina Bar */}

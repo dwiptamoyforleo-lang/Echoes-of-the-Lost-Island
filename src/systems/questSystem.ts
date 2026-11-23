@@ -18,6 +18,7 @@ export type QuestEvent =
   | { type: 'gate_opened'; levelId: LevelId }
   | { type: 'chest'; levelId: LevelId; foundCount: number }
   | { type: 'door_unlocked'; levelId: LevelId; doorId: string }
+  | { type: 'objective_progress'; levelId: LevelId; objectiveId: string; value: number }
   | { type: 'fragment'; levelId: LevelId };
 
 function makeObj(
@@ -85,7 +86,20 @@ export function createInitialQuests(): Record<LevelId, QuestObjective[]> {
       ),
     ],
     level2: [
-      makeObj('l2-obj-seals', 'level2', 'Awaken the 3 Canopy Seals', 'main', 3),
+      makeObj(
+        'l2-obj-totems',
+        'level2',
+        'Awaken the 3 Spirit Totems in Order (Roots, Wings, Antlers)',
+        'main',
+        3,
+      ),
+      makeObj(
+        'l2-obj-bridge',
+        'level2',
+        'Align the 3 River Wheels to Lower the Drawbridge',
+        'main',
+        1,
+      ),
       makeObj(
         'l2-obj-fragment',
         'level2',
@@ -94,22 +108,49 @@ export function createInitialQuests(): Record<LevelId, QuestObjective[]> {
         1,
       ),
       makeObj(
+        'l2-obj-hidden-path',
+        'level2',
+        'Reveal the Hidden Moss Grotto Path',
+        'optional',
+        1,
+      ),
+      makeObj(
         'l2-obj-crystals',
         'level2',
-        'Collect all 20 Canopy Crystals',
+        'Collect all 25 Woodland Crystals',
         'optional',
-        20,
+        25,
       ),
       makeObj(
         'l2-obj-chest',
         'level2',
-        'Find the hidden Canopy Chest',
+        'Find the Hidden Grotto Chest',
         'optional',
         1,
       ),
     ],
     level3: [
-      makeObj('l3-obj-seals', 'level3', 'Align the 3 Observatory Seals', 'main', 3),
+      makeObj(
+        'l3-obj-bronze-door',
+        'level3',
+        'Find the Bronze Key & Unlock the Bronze Gate',
+        'main',
+        1,
+      ),
+      makeObj(
+        'l3-obj-drain',
+        'level3',
+        'Weight Both Sluice Plates to Drain the Flooded Cistern',
+        'main',
+        1,
+      ),
+      makeObj(
+        'l3-obj-statues',
+        'level3',
+        'Align the 4 Guardian Statues to Unseal the Star Throne',
+        'main',
+        1,
+      ),
       makeObj(
         'l3-obj-fragment',
         'level3',
@@ -118,18 +159,25 @@ export function createInitialQuests(): Record<LevelId, QuestObjective[]> {
         1,
       ),
       makeObj(
+        'l3-obj-interconnect',
+        'level3',
+        'Open the Western Sealed Vault via the Cistern Lever',
+        'optional',
+        1,
+      ),
+      makeObj(
         'l3-obj-crystals',
         'level3',
-        'Collect all 20 Observatory Crystals',
+        'Collect all 30 Sunken Crystals',
         'optional',
-        20,
+        30,
       ),
       makeObj(
         'l3-obj-chest',
         'level3',
-        'Find the hidden Lens Chest',
+        'Find both Sunken Kingdom Chests',
         'optional',
-        1,
+        2,
       ),
     ],
     level4: [
@@ -261,6 +309,17 @@ export function applyQuestEvent(
         updated = updateObjectiveProgress(updated, 'l1-obj-fragment', 1, true);
         break;
     }
+  } else if (event.type === 'objective_progress') {
+    const keepSticky =
+      event.levelId === 'level2' && event.objectiveId === 'l2-obj-totems'
+        ? false
+        : true;
+    updated = updateObjectiveProgress(
+      updated,
+      event.objectiveId,
+      event.value,
+      keepSticky,
+    );
   } else {
     const num = event.levelId.slice(-1);
     if (event.type === 'crystal') {
@@ -277,6 +336,15 @@ export function applyQuestEvent(
         event.activeCount,
         true,
       );
+    } else if (event.type === 'door_unlocked') {
+      if (event.levelId === 'level3' && event.doorId === 'l3-door-bronze') {
+        updated = updateObjectiveProgress(
+          updated,
+          'l3-obj-bronze-door',
+          1,
+          true,
+        );
+      }
     } else if (event.type === 'chest') {
       updated = updateObjectiveProgress(
         updated,

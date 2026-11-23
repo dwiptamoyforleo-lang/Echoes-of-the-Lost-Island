@@ -122,6 +122,7 @@ export interface GameState {
   toasts: ToastNotification[];
   checkpointPos: [number, number, number];
   recoveredFragmentName: string | null;
+  underwaterTint: boolean;
 
   setScreen: (screen: GameScreen) => void;
   startLevel: (level: ActiveLevelId) => void;
@@ -172,6 +173,12 @@ export interface GameState {
   openInscription: (data: InscriptionData) => void;
   closeInscription: () => void;
   setObjectiveText: (text: string) => void;
+  reportQuestObjective: (
+    objectiveId: string,
+    value: number,
+    levelId?: LevelId,
+  ) => void;
+  setUnderwaterTint: (active: boolean) => void;
   showToast: (message: string | null, kind?: ToastKind) => void;
   dismissToast: (id: number) => void;
   setCheckpoint: (pos: [number, number, number]) => void;
@@ -199,10 +206,8 @@ const VALID_SCREENS: readonly GameScreen[] = [
   'ending',
 ];
 
-const LEVEL_SEAL_IDS: Record<LevelId, readonly string[]> = {
+const LEVEL_SEAL_IDS: Partial<Record<LevelId, readonly string[]>> = {
   level1: ['switch-west', 'switch-east', 'plate-courtyard'],
-  level2: ['l2-switch-west', 'l2-switch-east', 'l2-plate-shrine'],
-  level3: ['l3-switch-west', 'l3-switch-east', 'l3-plate-star'],
   level4: ['l4-switch-west', 'l4-switch-east', 'l4-plate-hearth'],
   level5: ['l5-switch-west', 'l5-switch-east', 'l5-plate-summit'],
 };
@@ -240,9 +245,9 @@ export function getDefaultSpawn(level: ActiveLevelId): [number, number, number] 
     case 'level1':
       return [0, 1.5, 25];
     case 'level2':
-      return [0, 2.7, 26];
+      return [0, 3.0, 26];
     case 'level3':
-      return [0, 2.3, 26];
+      return [0, 2.0, 26];
     case 'level4':
       return [0, 2.5, 26];
     case 'level5':
@@ -397,6 +402,7 @@ function makeInitialState() {
       toasts: [] as ToastNotification[],
       checkpointPos: saved.checkpointPos,
       recoveredFragmentName: null,
+      underwaterTint: false,
     };
   }
 
@@ -425,7 +431,10 @@ function makeInitialState() {
     ),
     inventoryVisible: false,
     crystals: 0,
-    totalCrystals: initialLevel === 'testArena' ? 0 : 20,
+    totalCrystals:
+      initialLevel === 'testArena'
+        ? 0
+        : getLevelMetadata(initialLevel).totalCrystals,
     keys: [] as string[],
     inventory: [] as string[],
     inventoryItems: [] as InventoryItem[],
@@ -448,6 +457,7 @@ function makeInitialState() {
     toasts: [] as ToastNotification[],
     checkpointPos: getDefaultSpawn(initialLevel),
     recoveredFragmentName: null,
+    underwaterTint: false,
   };
 }
 
@@ -525,6 +535,7 @@ export const useGameStore = create<GameState>((set, get) => {
           toasts: [],
           checkpointPos: defaultSpawn,
           recoveredFragmentName: null,
+          underwaterTint: false,
           levelElapsedSeconds: 0,
         });
         return;
@@ -560,7 +571,7 @@ export const useGameStore = create<GameState>((set, get) => {
         screen: 'playing',
         inventoryVisible: false,
         crystals: levelProgress.crystalsCollected,
-        totalCrystals: levelProgress.totalCrystals,
+        totalCrystals: getLevelMetadata(level).totalCrystals,
         keys: [],
         inventoryItems: persistentItems,
         inventory: persistentItems
@@ -575,6 +586,7 @@ export const useGameStore = create<GameState>((set, get) => {
         toasts: [],
         checkpointPos: defaultSpawn,
         recoveredFragmentName: null,
+        underwaterTint: false,
         levelElapsedSeconds: 0,
       });
     },
@@ -650,6 +662,7 @@ export const useGameStore = create<GameState>((set, get) => {
         toasts: [],
         checkpointPos: data.checkpointPos,
         recoveredFragmentName: null,
+        underwaterTint: false,
       }));
       return true;
     },
@@ -690,6 +703,7 @@ export const useGameStore = create<GameState>((set, get) => {
         toasts: [],
         checkpointPos: spawn,
         recoveredFragmentName: null,
+        underwaterTint: false,
       }));
     },
 
@@ -728,6 +742,7 @@ export const useGameStore = create<GameState>((set, get) => {
         toasts: [],
         checkpointPos: spawn,
         recoveredFragmentName: null,
+        underwaterTint: false,
       }));
     },
 
@@ -783,6 +798,7 @@ export const useGameStore = create<GameState>((set, get) => {
         objectiveText: deriveObjectiveText('level1', quests),
         checkpointPos: spawn,
         recoveredFragmentName: null,
+        underwaterTint: false,
       }));
       pushToast('Progress reset', 'info');
     },
@@ -937,6 +953,7 @@ export const useGameStore = create<GameState>((set, get) => {
         activeInscription: null,
         toastMessage: null,
         toasts: [],
+        underwaterTint: false,
       }),
 
     setActivated: (id, active) => {
@@ -1019,8 +1036,10 @@ export const useGameStore = create<GameState>((set, get) => {
       });
 
       playPooledSynth('crystal');
+      const crystalCap =
+        state.totalCrystals || getLevelMetadata(levelId).totalCrystals;
       pushToast(
-        `Crystal collected (${nextCount}/${state.totalCrystals || 20})`,
+        `Crystal collected (${nextCount}/${crystalCap})`,
         'crystal',
       );
       applyQuestAndNotify(
@@ -1250,6 +1269,27 @@ export const useGameStore = create<GameState>((set, get) => {
 
     setObjectiveText: (text) => set({ objectiveText: text }),
 
+    reportQuestObjective: (objectiveId, value, levelId) => {
+      const state = get();
+      const targetLevel: LevelId =
+        levelId ?? (state.activeLevel === 'testArena' ? 'level1' : state.activeLevel);
+      applyQuestAndNotify(
+        {
+          type: 'objective_progress',
+          levelId: targetLevel,
+          objectiveId,
+          value,
+        },
+        state.activeLevel,
+      );
+      get().scheduleDebouncedSave();
+    },
+
+    setUnderwaterTint: (active) =>
+      set((state) =>
+        state.underwaterTint === active ? state : { underwaterTint: active },
+      ),
+
     showToast: (message, kind = 'info') => {
       if (message === null) {
         set({ toastMessage: null });
@@ -1304,6 +1344,7 @@ export const useGameStore = create<GameState>((set, get) => {
           .map((i) => i.name),
         activePrompt: null,
         activeInscription: null,
+        underwaterTint: false,
       });
 
       applyQuestAndNotify({ type: 'fragment', levelId }, state.activeLevel);
@@ -1335,6 +1376,7 @@ export const useGameStore = create<GameState>((set, get) => {
         toasts: [],
         checkpointPos: spawnPos,
         recoveredFragmentName: null,
+        underwaterTint: false,
         levelElapsedSeconds: 0,
       }),
 

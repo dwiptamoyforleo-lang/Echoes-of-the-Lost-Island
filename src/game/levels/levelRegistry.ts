@@ -4,8 +4,8 @@ import { LEVEL_CHUNKS } from './levelTerrainFactory';
 
 const levelImporters: Record<LevelId, () => Promise<{ default: ComponentType }>> = {
   level1: () => import('./Level1_ForgottenShore'),
-  level2: () => import('./Level2_WhisperingCanopy'),
-  level3: () => import('./Level3_SunkenObservatory'),
+  level2: () => import('./Level2_WhisperingWoods'),
+  level3: () => import('./Level3_SunkenKingdom'),
   level4: () => import('./Level4_ObsidianCaldera'),
   level5: () => import('./Level5_HeartOfTheSpire'),
 };
