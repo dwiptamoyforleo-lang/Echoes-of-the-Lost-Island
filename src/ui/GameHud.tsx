@@ -5,6 +5,7 @@ import { ANCIENT_FRAGMENTS } from '@/src/systems/inventorySystem';
 import { DialogueBox } from './DialogueBox';
 import { ItemIcon } from './ItemIcon';
 import { FragmentEmblem } from './RuneOrnaments';
+import { VirtualJoystick } from './VirtualJoystick';
 
 const TOAST_BORDER_COLORS: Record<ToastKind, string> = {
   crystal: 'border-sky-400/60 text-sky-100',
@@ -268,6 +269,9 @@ export function GameHud() {
           WASD Move · Shift Sprint · Space Jump · E Interact · I Satchel · J Quests · F3/F4/F5 Debug · Esc Pause
         </p>
       </div>
+
+      {/* Touch-only bottom-left virtual movement thumbstick */}
+      <VirtualJoystick />
     </div>
   );
 }

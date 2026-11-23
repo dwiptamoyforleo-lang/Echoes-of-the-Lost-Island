@@ -2,18 +2,21 @@ import { useEffect, useRef } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import { useRapier } from '@react-three/rapier';
 import * as THREE from 'three';
+import { getLevelHeight } from '@/src/game/levels/levelTerrainFactory';
 import { resolveCameraDistanceWithRaycast } from '@/src/game/physics/raycast';
 import { playerTelemetry } from '@/src/game/player/playerTelemetry';
 import { useGameStore } from '@/src/state/gameStore';
 
-const CAMERA_DISTANCE = 5.0;
+const CAMERA_DISTANCE = 5.8;
 const SHOULDER_RIGHT_OFFSET = 0.55;
-const TARGET_HEIGHT_OFFSET = 1.35;
+const TARGET_HEIGHT_OFFSET = 1.55;
+const DEFAULT_PITCH = 0.25;
 const BASE_FOV = 52;
 const SPRINT_FOV = 60;
 const MIN_PITCH = -0.45;
 const MAX_PITCH = 1.15;
 const BASE_MOUSE_SENSITIVITY = 0.0024;
+const BASE_DRAG_SENSITIVITY = 0.0045;
 
 // Pre-allocated scratch vectors (zero GC in useFrame)
 const _rayOrigin = new THREE.Vector3();
@@ -28,29 +31,43 @@ export function ThirdPersonCamera() {
   const { world } = useRapier();
   const screen = useGameStore((state) => state.screen);
   const activeOverlay = useGameStore((state) => state.activeOverlay);
+  const activeLevel = useGameStore((state) => state.activeLevel);
+  const runId = useGameStore((state) => state.runId);
+  const levelLoading = useGameStore((state) => state.levelLoading);
 
   const targetYawRef = useRef(0);
-  const targetPitchRef = useRef(0.28);
+  const targetPitchRef = useRef(DEFAULT_PITCH);
   const currentYawRef = useRef(0);
-  const currentPitchRef = useRef(0.28);
+  const currentPitchRef = useRef(DEFAULT_PITCH);
   const currentDistRef = useRef(CAMERA_DISTANCE);
   const currentFovRef = useRef(BASE_FOV);
 
-  const smoothedTargetRef = useRef(new THREE.Vector3(0, 1.35, 8));
-  const smoothedCamPosRef = useRef(new THREE.Vector3(0.55, 3.2, 13));
+  const smoothedTargetRef = useRef(new THREE.Vector3(0, TARGET_HEIGHT_OFFSET, 8));
+  const smoothedCamPosRef = useRef(new THREE.Vector3(0.55, 3.4, 13.8));
   const initializedRef = useRef(false);
   const orbitAngleRef = useRef(0.42);
+  const dragPointerIdRef = useRef<number | null>(null);
+  const dragLastPosRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const dragMovedRef = useRef(false);
 
   useEffect(() => {
     const domElement = gl.domElement;
 
     const handleCanvasClick = () => {
+      if (dragMovedRef.current) {
+        dragMovedRef.current = false;
+        return;
+      }
       const st = useGameStore.getState();
       if (
         st.screen !== 'playing' ||
         st.activeOverlay !== 'none' ||
         st.activeInscription
       ) {
+        return;
+      }
+      // Skip pointer lock on coarse/touch-only pointers so touch drag works seamlessly
+      if (window.matchMedia?.('(pointer: coarse)').matches) {
         return;
       }
       if (document.pointerLockElement !== domElement) {
@@ -69,7 +86,13 @@ export function ThirdPersonCamera() {
 
     const handleMouseMove = (event: MouseEvent) => {
       const st = useGameStore.getState();
-      if (st.screen !== 'playing' || st.activeOverlay !== 'none') return;
+      if (
+        st.screen !== 'playing' ||
+        st.activeOverlay !== 'none' ||
+        st.activeInscription
+      ) {
+        return;
+      }
       if (document.pointerLockElement !== domElement) return;
 
       const sens = BASE_MOUSE_SENSITIVITY * st.settings.mouseSensitivity;
@@ -83,25 +106,104 @@ export function ThirdPersonCamera() {
       );
     };
 
+    const handlePointerDown = (event: PointerEvent) => {
+      if (document.pointerLockElement === domElement) return;
+      const st = useGameStore.getState();
+      if (
+        st.screen !== 'playing' ||
+        st.activeOverlay !== 'none' ||
+        st.activeInscription
+      ) {
+        return;
+      }
+      if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (dragPointerIdRef.current !== null) return;
+      dragPointerIdRef.current = event.pointerId;
+      dragLastPosRef.current.x = event.clientX;
+      dragLastPosRef.current.y = event.clientY;
+      dragMovedRef.current = false;
+    };
+
+    const handlePointerMove = (event: PointerEvent) => {
+      if (dragPointerIdRef.current !== event.pointerId) return;
+      if (document.pointerLockElement === domElement) {
+        dragPointerIdRef.current = null;
+        return;
+      }
+      const st = useGameStore.getState();
+      if (
+        st.screen !== 'playing' ||
+        st.activeOverlay !== 'none' ||
+        st.activeInscription
+      ) {
+        dragPointerIdRef.current = null;
+        return;
+      }
+
+      const dx = event.clientX - dragLastPosRef.current.x;
+      const dy = event.clientY - dragLastPosRef.current.y;
+      dragLastPosRef.current.x = event.clientX;
+      dragLastPosRef.current.y = event.clientY;
+
+      if (Math.hypot(dx, dy) > 1.5) {
+        dragMovedRef.current = true;
+      }
+
+      const sens = BASE_DRAG_SENSITIVITY * st.settings.mouseSensitivity;
+      const ySign = st.settings.invertY ? -1 : 1;
+      targetYawRef.current -= dx * sens;
+      targetPitchRef.current = THREE.MathUtils.clamp(
+        targetPitchRef.current + dy * sens * ySign,
+        MIN_PITCH,
+        MAX_PITCH,
+      );
+    };
+
+    const handlePointerUp = (event: PointerEvent) => {
+      if (dragPointerIdRef.current === event.pointerId) {
+        dragPointerIdRef.current = null;
+      }
+    };
+
     domElement.addEventListener('click', handleCanvasClick);
     window.addEventListener('mousemove', handleMouseMove);
+    domElement.addEventListener('pointerdown', handlePointerDown);
+    window.addEventListener('pointermove', handlePointerMove);
+    window.addEventListener('pointerup', handlePointerUp);
+    window.addEventListener('pointercancel', handlePointerUp);
 
     return () => {
       domElement.removeEventListener('click', handleCanvasClick);
       window.removeEventListener('mousemove', handleMouseMove);
+      domElement.removeEventListener('pointerdown', handlePointerDown);
+      window.removeEventListener('pointermove', handlePointerMove);
+      window.removeEventListener('pointerup', handlePointerUp);
+      window.removeEventListener('pointercancel', handlePointerUp);
     };
   }, [gl]);
 
   useEffect(() => {
-    const blocked =
-      screen !== 'playing' || activeOverlay !== 'none';
+    const blocked = screen !== 'playing' || activeOverlay !== 'none';
     if (blocked && document.pointerLockElement === gl.domElement) {
       document.exitPointerLock?.();
+    }
+    if (blocked) {
+      dragPointerIdRef.current = null;
     }
     if (screen === 'playing') {
       initializedRef.current = false;
     }
   }, [screen, activeOverlay, gl]);
+
+  // Snap camera behind player whenever a new level or run starts
+  useEffect(() => {
+    targetYawRef.current = 0;
+    currentYawRef.current = 0;
+    targetPitchRef.current = DEFAULT_PITCH;
+    currentPitchRef.current = DEFAULT_PITCH;
+    currentDistRef.current = CAMERA_DISTANCE;
+    initializedRef.current = false;
+  }, [activeLevel, runId, levelLoading]);
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
@@ -163,6 +265,14 @@ export function ThirdPersonCamera() {
       -Math.cos(yaw) * cosPitch,
     );
 
+    const applyTerrainClearance = (pos: THREE.Vector3) => {
+      if (storeState.activeLevel === 'testArena') return;
+      const floorY = getLevelHeight(storeState.activeLevel, pos.x, pos.z) + 0.6;
+      if (pos.y < floorY) {
+        pos.y = floorY;
+      }
+    };
+
     if (
       !initializedRef.current ||
       smoothedTargetRef.current.distanceTo(_desiredTarget) > 12
@@ -171,6 +281,7 @@ export function ThirdPersonCamera() {
       smoothedCamPosRef.current
         .copy(_desiredTarget)
         .addScaledVector(_forwardDir, -CAMERA_DISTANCE);
+      applyTerrainClearance(smoothedCamPosRef.current);
       initializedRef.current = true;
     }
 
@@ -180,6 +291,7 @@ export function ThirdPersonCamera() {
     _desiredCamPos
       .copy(smoothedTargetRef.current)
       .addScaledVector(_forwardDir, -CAMERA_DISTANCE);
+    applyTerrainClearance(_desiredCamPos);
 
     const safeDist = resolveCameraDistanceWithRaycast(
       world,
@@ -200,9 +312,11 @@ export function ThirdPersonCamera() {
     _desiredCamPos
       .copy(smoothedTargetRef.current)
       .addScaledVector(_forwardDir, -currentDistRef.current);
+    applyTerrainClearance(_desiredCamPos);
 
     const camAlpha = 1 - Math.exp(-18 * camResponsiveness * dt);
     smoothedCamPosRef.current.lerp(_desiredCamPos, camAlpha);
+    applyTerrainClearance(smoothedCamPosRef.current);
 
     camera.position.copy(smoothedCamPosRef.current);
     camera.lookAt(smoothedTargetRef.current);

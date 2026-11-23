@@ -3,6 +3,7 @@ import { DEFAULT_SETTINGS, type GraphicsQuality } from '@/src/systems/saveSystem
 import { AmbientDust, RuneCorner, RuneDivider } from './RuneOrnaments';
 
 const QUALITY_OPTIONS: { value: GraphicsQuality; label: string; hint: string }[] = [
+  { value: 'auto', label: 'Auto', hint: 'Adaptive FPS · Auto Tier' },
   { value: 'low', label: 'Low', hint: '0.75x DPR · Shadows Off' },
   { value: 'medium', label: 'Medium', hint: '1.0x DPR · Standard Shadows' },
   { value: 'high', label: 'High', hint: 'Full DPR · Soft Shadows' },

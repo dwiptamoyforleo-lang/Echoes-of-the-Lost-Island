@@ -417,6 +417,7 @@ export function ChunkPropField({
 
   const lastUpdatePosRef = useRef(new THREE.Vector3(999, 999, 999));
   const lastTierRef = useRef(activeTier);
+  const mountRevealRef = useRef(0.15);
 
   const { trees, rocks, grass, boundsSphere } = useMemo(() => {
     const rng = createRng(seed);
@@ -624,14 +625,23 @@ export function ChunkPropField({
       if (m) m.boundingSphere = boundsSphere.clone();
     }
     lastUpdatePosRef.current.set(999, 999, 999);
+    mountRevealRef.current = 0.15;
   }, [boundsSphere, chunkId]);
 
-  useFrame(() => {
+  useFrame((_, rawDt) => {
+    const dt = Math.min(rawDt, 0.05);
+    const prevReveal = mountRevealRef.current;
+    const isRevealing = prevReveal < 1;
+    if (isRevealing) {
+      mountRevealRef.current = Math.min(1, prevReveal + dt * 4.5);
+    }
+    const reveal = mountRevealRef.current;
+
     const p = playerTelemetry.position;
     const movedSq =
       (p.x - lastUpdatePosRef.current.x) ** 2 +
       (p.z - lastUpdatePosRef.current.z) ** 2;
-    if (movedSq < 6.25 && lastTierRef.current === activeTier) {
+    if (!isRevealing && movedSq < 6.25 && lastTierRef.current === activeTier) {
       return;
     }
     lastUpdatePosRef.current.set(p.x, p.y, p.z);
@@ -651,20 +661,20 @@ export function ChunkPropField({
         if (dist <= lodDist) {
           _dummy.position.set(tr.x, tr.y, tr.z);
           _dummy.rotation.set(0.06, tr.rot, 0.04);
-          _dummy.scale.setScalar(tr.scale);
+          _dummy.scale.setScalar(tr.scale * reveal);
           _dummy.updateMatrix();
           trunkHiRef.current.setMatrixAt(hiCount, _dummy.matrix);
 
-          _dummy.position.set(tr.x, tr.y + 4.0 * tr.scale, tr.z);
+          _dummy.position.set(tr.x, tr.y + 4.0 * tr.scale * reveal, tr.z);
           _dummy.rotation.set(0.05, tr.rot, 0);
-          _dummy.scale.setScalar(tr.scale);
+          _dummy.scale.setScalar(tr.scale * reveal);
           _dummy.updateMatrix();
           crownHiRef.current.setMatrixAt(hiCount, _dummy.matrix);
           hiCount += 1;
         } else if (dist <= medCull) {
           _dummy.position.set(tr.x, tr.y, tr.z);
           _dummy.rotation.set(0, tr.rot, 0);
-          _dummy.scale.setScalar(tr.scale);
+          _dummy.scale.setScalar(tr.scale * reveal);
           _dummy.updateMatrix();
           treeLoRef.current.setMatrixAt(loCount, _dummy.matrix);
           loCount += 1;
@@ -687,7 +697,7 @@ export function ChunkPropField({
         if (dist <= medCull) {
           _dummy.position.set(r.x, r.y, r.z);
           _dummy.rotation.set(r.rot * 0.3, r.rot, r.rot * 0.2);
-          _dummy.scale.set(r.sx, r.sy, r.sz);
+          _dummy.scale.set(r.sx * reveal, r.sy * reveal, r.sz * reveal);
           _dummy.updateMatrix();
           rockRef.current.setMatrixAt(rCount, _dummy.matrix);
           _color.set(palette.rockColor).multiplyScalar(r.tint);
@@ -711,7 +721,7 @@ export function ChunkPropField({
         if (dist <= nearCull) {
           _dummy.position.set(g.x, g.y, g.z);
           _dummy.rotation.set(0, g.rot, 0);
-          _dummy.scale.setScalar(g.scale);
+          _dummy.scale.setScalar(g.scale * reveal);
           _dummy.updateMatrix();
           grassRef.current.setMatrixAt(gCount, _dummy.matrix);
           _color.set(palette.grassBladeColor).multiplyScalar(g.tint);

@@ -12,6 +12,7 @@ export interface PerformanceTelemetry {
   activeTier: EffectiveQualityTier;
   currentDpr: number;
   loadedChunks: string[];
+  loadedChunkLabels: string[];
   totalChunks: number;
   pendingChunkLoads: number;
   visibleChunks: number;
@@ -30,6 +31,7 @@ export const performanceTelemetry: PerformanceTelemetry = {
   activeTier: 'high',
   currentDpr: 1,
   loadedChunks: [],
+  loadedChunkLabels: [],
   totalChunks: 0,
   pendingChunkLoads: 0,
   visibleChunks: 0,

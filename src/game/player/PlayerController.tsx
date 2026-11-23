@@ -161,6 +161,10 @@ export function PlayerController({
     }
 
     if (state.screen !== 'playing') {
+      horizVelRef.current.x = 0;
+      horizVelRef.current.z = 0;
+      playerTelemetry.velocity.set(0, 0, 0);
+      playerTelemetry.horizontalSpeed = 0;
       return;
     }
 
@@ -302,8 +306,8 @@ export function PlayerController({
       }
     }
 
-    // Fall-off safety: respawn at last checkpoint if dropping below y=-20
-    if (next.y < -20) {
+    // Fall-off safety: respawn at last checkpoint if dropping below y=-12
+    if (next.y < -12) {
       const cp = state.checkpointPos;
       next.x = cp[0];
       next.y = cp[1] + COLLIDER_CENTER_Y;

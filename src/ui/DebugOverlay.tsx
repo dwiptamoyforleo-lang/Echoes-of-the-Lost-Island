@@ -35,6 +35,7 @@ export function DebugOverlay() {
         activeTier,
         currentDpr,
         loadedChunks,
+        loadedChunkLabels,
         totalChunks,
         visibleChunks,
         jsHeapMB,
@@ -60,7 +61,9 @@ export function DebugOverlay() {
         tierRef.current.textContent = `${activeTier.toUpperCase()} · ${currentDpr.toFixed(2)}x`;
       }
       if (chunksRef.current) {
-        chunksRef.current.textContent = `${loadedChunks.length}/${totalChunks} (vis ${visibleChunks}) ${loadedChunks.join(', ') || 'none'}`;
+        const chunkDisplay =
+          loadedChunkLabels.length > 0 ? loadedChunkLabels : loadedChunks;
+        chunksRef.current.textContent = `${loadedChunks.length}/${totalChunks} (vis ${visibleChunks}) · ${chunkDisplay.join(' · ') || 'none'}`;
       }
       if (heapRef.current) {
         heapRef.current.textContent = jsHeapMB !== null ? `${jsHeapMB.toFixed(1)} MB` : 'N/A';

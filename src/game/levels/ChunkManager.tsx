@@ -13,6 +13,8 @@ import {
   type ChunkDefinition,
 } from './chunkStreaming';
 
+const STREAM_CHECK_INTERVAL_MS = 180;
+
 const _projScreenMatrix = new THREE.Matrix4();
 const _frustum = new THREE.Frustum();
 const _sphere = new THREE.Sphere();
@@ -23,6 +25,20 @@ function listsEqual(a: readonly string[], b: readonly string[]): boolean {
     if (a[i] !== b[i]) return false;
   }
   return true;
+}
+
+function resolveChunkLabels(
+  chunks: readonly ChunkDefinition[],
+  loadedIds: readonly string[],
+): string[] {
+  const labels: string[] = [];
+  for (let i = 0; i < chunks.length; i++) {
+    const c = chunks[i];
+    if (loadedIds.includes(c.id)) {
+      labels.push(c.label);
+    }
+  }
+  return labels;
 }
 
 function ChunkSlot({
@@ -58,6 +74,7 @@ export function ChunkManager({
 }: ChunkManagerProps) {
   const { camera } = useThree();
   const lastHeavyOpMsRef = useRef(-1000);
+  const lastStreamEvalMsRef = useRef(-1000);
   const pendingFlagRef = useRef(false);
 
   const onPendingRef = useRef(onStreamingPendingChange);
@@ -73,6 +90,10 @@ export function ChunkManager({
       lastHeavyOpMs: -1000,
     });
     performanceTelemetry.loadedChunks = initial.nextLoaded;
+    performanceTelemetry.loadedChunkLabels = resolveChunkLabels(
+      chunks,
+      initial.nextLoaded,
+    );
     performanceTelemetry.totalChunks = chunks.length;
     performanceTelemetry.pendingChunkLoads = initial.pendingCount;
     return initial.nextLoaded;
@@ -91,9 +112,14 @@ export function ChunkManager({
       nowMs: performance.now(),
       lastHeavyOpMs: -1000,
     });
+    lastStreamEvalMsRef.current = -1000;
     loadedIdsRef.current = initial.nextLoaded;
     setLoadedIds(initial.nextLoaded);
     performanceTelemetry.loadedChunks = initial.nextLoaded;
+    performanceTelemetry.loadedChunkLabels = resolveChunkLabels(
+      chunks,
+      initial.nextLoaded,
+    );
     performanceTelemetry.totalChunks = chunks.length;
     performanceTelemetry.pendingChunkLoads = initial.pendingCount;
 
@@ -108,22 +134,39 @@ export function ChunkManager({
 
   useFrame(() => {
     const nowMs = performance.now();
-    const res = evaluateChunkStreaming({
-      chunks,
-      currentlyLoaded: loadedIdsRef.current,
-      playerPos: playerTelemetry.position,
-      playerVel: playerTelemetry.velocity,
-      nowMs,
-      lastHeavyOpMs: lastHeavyOpMsRef.current,
-    });
+    if (nowMs - lastStreamEvalMsRef.current >= STREAM_CHECK_INTERVAL_MS) {
+      lastStreamEvalMsRef.current = nowMs;
+      const res = evaluateChunkStreaming({
+        chunks,
+        currentlyLoaded: loadedIdsRef.current,
+        playerPos: playerTelemetry.position,
+        playerVel: playerTelemetry.velocity,
+        nowMs,
+        lastHeavyOpMs: lastHeavyOpMsRef.current,
+      });
 
-    if (res.didHeavyOp) {
-      lastHeavyOpMsRef.current = nowMs;
-    }
+      if (res.didHeavyOp) {
+        lastHeavyOpMsRef.current = nowMs;
+      }
 
-    if (!listsEqual(res.nextLoaded, loadedIdsRef.current)) {
-      loadedIdsRef.current = res.nextLoaded;
-      setLoadedIds(res.nextLoaded);
+      if (!listsEqual(res.nextLoaded, loadedIdsRef.current)) {
+        loadedIdsRef.current = res.nextLoaded;
+        setLoadedIds(res.nextLoaded);
+        performanceTelemetry.loadedChunkLabels = resolveChunkLabels(
+          chunks,
+          res.nextLoaded,
+        );
+      }
+
+      performanceTelemetry.loadedChunks = loadedIdsRef.current;
+      performanceTelemetry.totalChunks = chunks.length;
+      performanceTelemetry.pendingChunkLoads = res.pendingCount;
+
+      const nextPending = res.pendingCount > 0;
+      if (nextPending !== pendingFlagRef.current) {
+        pendingFlagRef.current = nextPending;
+        onPendingRef.current?.(nextPending);
+      }
     }
 
     // Frustum visibility check across loaded chunks (zero heap allocation)
@@ -148,16 +191,7 @@ export function ChunkManager({
       }
     }
 
-    performanceTelemetry.loadedChunks = loadedIdsRef.current;
-    performanceTelemetry.totalChunks = chunks.length;
-    performanceTelemetry.pendingChunkLoads = res.pendingCount;
     performanceTelemetry.visibleChunks = visibleCount;
-
-    const nextPending = res.pendingCount > 0;
-    if (nextPending !== pendingFlagRef.current) {
-      pendingFlagRef.current = nextPending;
-      onPendingRef.current?.(nextPending);
-    }
   });
 
   return (

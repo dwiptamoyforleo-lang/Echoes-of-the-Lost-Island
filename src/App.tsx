@@ -30,7 +30,29 @@ export default function App() {
     const timer = window.setInterval(() => {
       useGameStore.getState().tickPlaytime(1);
     }, 1000);
-    return () => window.clearInterval(timer);
+
+    const preventContext = (e: Event) => {
+      const st = useGameStore.getState();
+      if (st.activeOverlay === 'none' && !st.activeInscription) {
+        e.preventDefault();
+      }
+    };
+    const preventMultiTouch = (e: TouchEvent) => {
+      if (e.touches.length > 1) {
+        e.preventDefault();
+      }
+    };
+
+    window.addEventListener('contextmenu', preventContext);
+    window.addEventListener('gesturestart', preventContext);
+    window.addEventListener('touchmove', preventMultiTouch, { passive: false });
+
+    return () => {
+      window.clearInterval(timer);
+      window.removeEventListener('contextmenu', preventContext);
+      window.removeEventListener('gesturestart', preventContext);
+      window.removeEventListener('touchmove', preventMultiTouch);
+    };
   }, [screen]);
 
   return (
