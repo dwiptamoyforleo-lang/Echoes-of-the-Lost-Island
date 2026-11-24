@@ -1,4 +1,5 @@
 import { Suspense, useEffect, useMemo, useState } from 'react';
+import { GAME_TITLE } from '@/src/config/gameInfo';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js';
@@ -110,11 +111,11 @@ export function GameCanvas() {
 
     const handleContextLost = (event: Event) => {
       event.preventDefault();
-      console.warn('[Echoes] WebGL context lost');
+      console.warn('[Journey Home] WebGL context lost');
       setContextLost(true);
     };
     const handleContextRestored = () => {
-      console.info('[Echoes] WebGL context restored');
+      console.info('[Journey Home] WebGL context restored');
       setContextLost(false);
     };
 
@@ -176,7 +177,7 @@ export function GameCanvas() {
             3D Graphics Context Required
           </h2>
           <p className="mt-2 text-xs leading-relaxed text-[#cfc3aa]">
-            Echoes of the Lost Island requires WebGL to render the island world.
+            {GAME_TITLE} requires WebGL to render the island world.
             Enable hardware acceleration in your browser settings, update graphics
             drivers, or try a modern Chromium/Firefox/Safari browser.
           </p>
@@ -254,7 +255,7 @@ export function GameCanvas() {
             setEnvTexture(tex);
             pmremGenerator.dispose();
           } catch (err) {
-            console.warn('[Echoes] RoomEnvironment PMREM skipped:', err);
+            console.warn('[Journey Home] RoomEnvironment PMREM skipped:', err);
           }
 
           setCanvasEl(gl.domElement);
