@@ -17,9 +17,36 @@ import {
   type PersistedWorldState,
 } from './worldStateSystem';
 
-export const SAVE_STORAGE_KEY = 'echoes_lost_island_save_v1';
-export const SETTINGS_STORAGE_KEY = 'echoes_lost_island_settings_v1';
+export const SAVE_STORAGE_KEY = 'journey-home-save-v1';
+export const SETTINGS_STORAGE_KEY = 'journey-home-settings-v1';
 export const SAVE_VERSION = 1;
+
+const LEGACY_SAVE_STORAGE_KEY = 'echoes_lost_island_save_v1';
+const LEGACY_SETTINGS_STORAGE_KEY = 'echoes_lost_island_settings_v1';
+
+export function migrateLegacyStorage(storage: StorageLike | null = getBrowserStorage()): void {
+  if (!storage) return;
+
+  const migrations: Array<[string, string]> = [
+    [LEGACY_SAVE_STORAGE_KEY, SAVE_STORAGE_KEY],
+    [LEGACY_SETTINGS_STORAGE_KEY, SETTINGS_STORAGE_KEY],
+  ];
+
+  for (const [legacyKey, currentKey] of migrations) {
+    try {
+      const currentValue = storage.getItem(currentKey);
+      const legacyValue = storage.getItem(legacyKey);
+      if (!currentValue && legacyValue !== null) {
+        storage.setItem(currentKey, legacyValue);
+        storage.removeItem(legacyKey);
+      }
+    } catch {
+      // Restricted storage or corrupt entries must never prevent startup.
+    }
+  }
+}
+
+migrateLegacyStorage();
 
 export type GraphicsQuality = 'auto' | 'low' | 'medium' | 'high';
 
