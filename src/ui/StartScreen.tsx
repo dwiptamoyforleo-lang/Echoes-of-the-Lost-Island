@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { GAME_TAGLINE, GAME_TITLE } from '@/src/config/gameInfo';
 import { useGameStore } from '@/src/state/gameStore';
 import { AmbientDust, RuneCorner, RuneDivider } from './RuneOrnaments';
 
@@ -61,8 +62,11 @@ export function StartScreen() {
             <polygon points="24,12 32,24 24,36 16,24" fill="currentColor" />
           </svg>
           <h1 className="font-display text-2xl font-bold tracking-wider text-[#f7ebd2] sm:text-3xl">
-            Echoes of the Lost Island
+            {GAME_TITLE}
           </h1>
+          <p className="max-w-sm text-[11px] leading-relaxed tracking-wide text-[#d9af62] sm:text-xs">
+            {GAME_TAGLINE}
+          </p>
           <p className="max-w-sm text-xs leading-relaxed text-[#cfc3aa] sm:text-sm">
             Chart the forgotten coast, rekindle the ancient seals, and recover the five resonant fragments.
           </p>
