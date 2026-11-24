@@ -6,7 +6,7 @@ import './index.css';
 
 const webgl = detectWebGLSupport();
 console.info(
-  `[Echoes] v1.0.0 | base=${import.meta.env.BASE_URL} | webgl=${webgl.version} (${webgl.renderer}) | rapier=pending`,
+  `[Journey Home] v1.0.0 | base=${import.meta.env.BASE_URL} | webgl=${webgl.version} (${webgl.renderer}) | rapier=pending`,
 );
 
 createRoot(document.getElementById('root')!).render(
