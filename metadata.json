@@ -1,6 +1,8 @@
 {
-  "name": "Echoes of the Lost Island",
-  "description": "A stylized third-person 3D adventure on an ancient island.",
+  "name": "Journey Home",
+  "description": "A stylized third-person 3D adventure across a mysterious archipelago. Every journey leads somewhere. Yours leads home.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
