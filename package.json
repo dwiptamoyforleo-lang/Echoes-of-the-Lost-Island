@@ -1,5 +1,5 @@
 {
-  "name": "react-example",
+  "name": "journey-home",
   "private": true,
   "version": "0.0.0",
   "type": "module",
@@ -35,5 +35,6 @@
     "tailwindcss": "^4.3.3",
     "tsx": "^4.21.0",
     "typescript": "^7.0.2"
-  }
+  },
+  "description": "A stylized third-person 3D adventure across a mysterious archipelago. Every journey leads somewhere. Yours leads home."
 }
