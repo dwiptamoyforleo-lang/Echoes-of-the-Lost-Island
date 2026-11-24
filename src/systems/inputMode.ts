@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { create } from 'zustand';
 
 export type InputMode = 'keyboard' | 'touch';
@@ -10,7 +10,13 @@ export function detectInitialInputMode(): InputMode {
   const coarse = window.matchMedia?.('(pointer: coarse)').matches ?? false;
   const noHover = window.matchMedia?.('(hover: none)').matches ?? true;
   const hasTouchPoints = (navigator.maxTouchPoints ?? 0) > 0;
-  return coarse && noHover && hasTouchPoints ? 'touch' : 'keyboard';
+  const mobileUa = /Android|iPhone|iPad|iPod|Mobile/i.test(
+    navigator.userAgent || '',
+  );
+  return (coarse && (noHover || mobileUa) && hasTouchPoints) ||
+    (mobileUa && hasTouchPoints)
+    ? 'touch'
+    : 'keyboard';
 }
 
 interface InputModeState {
@@ -88,6 +94,63 @@ export function useInputMode(): InputMode {
   }, []);
 
   return inputMode;
+}
+
+export interface ViewportLayout {
+  width: number;
+  height: number;
+  isPortrait: boolean;
+  isCompactWidth: boolean;
+  isCompactHeight: boolean;
+}
+
+function readViewportLayout(): ViewportLayout {
+  if (typeof window === 'undefined') {
+    return {
+      width: 1280,
+      height: 720,
+      isPortrait: false,
+      isCompactWidth: false,
+      isCompactHeight: false,
+    };
+  }
+  const width = window.innerWidth;
+  const height = window.innerHeight;
+  return {
+    width,
+    height,
+    isPortrait: height > width,
+    isCompactWidth: width < 640,
+    isCompactHeight: height < 520,
+  };
+}
+
+export function useViewportLayout(): ViewportLayout {
+  const [layout, setLayout] = useState<ViewportLayout>(readViewportLayout);
+
+  useEffect(() => {
+    const sync = () => {
+      setLayout((prev) => {
+        const next = readViewportLayout();
+        if (
+          prev.width === next.width &&
+          prev.height === next.height &&
+          prev.isPortrait === next.isPortrait
+        ) {
+          return prev;
+        }
+        return next;
+      });
+    };
+    window.addEventListener('resize', sync);
+    window.addEventListener('orientationchange', sync);
+    return () => {
+      window.removeEventListener('resize', sync);
+      window.removeEventListener('orientationchange', sync);
+    };
+  }, []);
+
+  return layout;
 }
 
 const PRESS_E_PREFIX_RE = /^press\s+e\s+to\s+/i;

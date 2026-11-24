@@ -1,10 +1,13 @@
 import { useEffect, useRef } from 'react';
+import { create } from 'zustand';
 import { useGameStore } from '@/src/state/gameStore';
 import { triggerInteract } from '@/src/systems/interaction';
 
 export interface PlayerInputState {
   forward: number;
   right: number;
+  magnitude: number;
+  fromJoystick: boolean;
   sprint: boolean;
   jumpHeld: boolean;
   jumpJustPressed: boolean;
@@ -20,6 +23,44 @@ const virtualJoystickAxis = {
   y: 0,
   active: false,
 };
+
+let virtualJumpHeld = false;
+let virtualJumpQueued = false;
+
+interface VirtualTouchButtonsStore {
+  sprintToggle: boolean;
+  setSprintToggle: (active: boolean) => void;
+  toggleSprint: () => void;
+}
+
+export const useVirtualTouchStore = create<VirtualTouchButtonsStore>((set) => ({
+  sprintToggle: false,
+  setSprintToggle: (active) =>
+    set((s) => (s.sprintToggle === active ? s : { sprintToggle: active })),
+  toggleSprint: () => set((s) => ({ sprintToggle: !s.sprintToggle })),
+}));
+
+export function setVirtualJump(held: boolean): void {
+  if (held && !virtualJumpHeld) {
+    virtualJumpQueued = true;
+  }
+  virtualJumpHeld = held;
+}
+
+export function setVirtualSprint(active: boolean): void {
+  useVirtualTouchStore.getState().setSprintToggle(active);
+}
+
+export function toggleVirtualSprint(): boolean {
+  useVirtualTouchStore.getState().toggleSprint();
+  return useVirtualTouchStore.getState().sprintToggle;
+}
+
+export function resetVirtualTouchButtons(): void {
+  virtualJumpHeld = false;
+  virtualJumpQueued = false;
+  useVirtualTouchStore.getState().setSprintToggle(false);
+}
 
 export function setVirtualJoystickMove(
   x: number,
@@ -68,6 +109,7 @@ export function usePlayerInput() {
       heldRef.current.clear();
       jumpQueuedRef.current = false;
       resetVirtualJoystickMove();
+      resetVirtualTouchButtons();
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -254,13 +296,24 @@ export function usePlayerInput() {
       _combinedAxis,
     );
 
+    const hasKeyboardMove = keyForward !== 0 || keyRight !== 0;
+    const joyActiveMove =
+      virtualJoystickAxis.active && Math.hypot(joyX, joyY) > 1e-4;
+    const mag = Math.min(1, Math.hypot(combined.forward, combined.right));
+
     out.forward = combined.forward;
     out.right = combined.right;
-    out.sprint = held.has('ShiftLeft') || held.has('ShiftRight');
-    out.jumpHeld = held.has('Space');
-    out.jumpJustPressed = jumpQueuedRef.current;
+    out.magnitude = mag;
+    out.fromJoystick = joyActiveMove && !hasKeyboardMove;
+    out.sprint =
+      held.has('ShiftLeft') ||
+      held.has('ShiftRight') ||
+      useVirtualTouchStore.getState().sprintToggle;
+    out.jumpHeld = held.has('Space') || virtualJumpHeld;
+    out.jumpJustPressed = jumpQueuedRef.current || virtualJumpQueued;
 
     jumpQueuedRef.current = false;
+    virtualJumpQueued = false;
     return out;
   };
 
