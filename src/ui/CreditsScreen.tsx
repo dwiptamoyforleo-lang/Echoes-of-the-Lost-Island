@@ -4,15 +4,15 @@ import { AmbientDust, RuneCorner, RuneDivider } from './RuneOrnaments';
 const CREDIT_SECTIONS = [
   {
     role: 'Design & World Architecture',
-    detail: 'Five-island expedition structure, puzzles, and ancient shard lore.',
+    detail: 'Five-island expedition structure from Forgotten Shore and Whispering Woods through the Sunken Kingdom, Frozen Peaks, and Sky Temple.',
   },
   {
     role: 'Procedural 3D & Shaders',
-    detail: 'Heightfield shore geometry, instanced flora, animated coastal ocean, and stylized explorer rig.',
+    detail: 'Heightfield geometry, instanced flora, animated water, GLSL aurora borealis, falling snow, drifting cloud seas, and stylized explorer rig.',
   },
   {
     role: 'Physics & Core Systems',
-    detail: 'Kinematic Rapier character controller, stamina kinematics, quest state machine, and versioned saves.',
+    detail: 'Kinematic Rapier character controller with ice-glide mechanics, chunk streaming, quest state machine, and versioned saves.',
   },
   {
     role: 'Engine & Open-Source Stack',

@@ -15,6 +15,33 @@ const TOAST_BORDER_COLORS: Record<ToastKind, string> = {
   info: 'border-[#c79d52]/60 text-[#f3e7cf]',
 };
 
+const FINALE_BEATS: ReadonlyArray<{
+  chapter: string;
+  title: string;
+  body: string;
+}> = [
+  {
+    chapter: 'Finale · I of IV',
+    title: 'The Cradle of Five Echoes',
+    body: 'As the Echo of Eternity settles beside Tide, Gale, Stars, and Frost, the Sky Temple astrolabe awakens with a deep, golden chime.',
+  },
+  {
+    chapter: 'Finale · II of IV',
+    title: 'The Ancient Covenant',
+    body: 'Ages ago, the Sky Temple builders split the archipelago heart into five resonant echoes so no single storm could ever silence the islands.',
+  },
+  {
+    chapter: 'Finale · III of IV',
+    title: 'Skyfire Conduit Restored',
+    body: 'A radiant column of teal and amber light surges heavenward, reweaving the sky bridges and calming the drifting cloud sea below.',
+  },
+  {
+    chapter: 'Finale · IV of IV',
+    title: 'Echoes Across the Horizon',
+    body: 'From the Forgotten Shore to the Frozen Peaks, every shrine answers in harmony. The Lost Archipelago breathes once more.',
+  },
+];
+
 function ToastItem({
   id,
   message,
@@ -59,6 +86,14 @@ export function GameHud() {
   const quests = useGameStore((state) => state.quests);
   const streamingPending = useGameStore((state) => state.streamingPending);
   const underwaterTint = useGameStore((state) => state.underwaterTint);
+  const fallFadeActive = useGameStore((state) => state.fallFadeActive);
+  const finaleCutscene = useGameStore((state) => state.finaleCutscene);
+  const advanceFinaleCutscene = useGameStore(
+    (state) => state.advanceFinaleCutscene,
+  );
+  const finishFinaleCutscene = useGameStore(
+    (state) => state.finishFinaleCutscene,
+  );
   const toggleInventory = useGameStore((state) => state.toggleInventory);
   const toggleQuestLog = useGameStore((state) => state.toggleQuestLog);
 
@@ -100,18 +135,87 @@ export function GameHud() {
       ? Math.round((completedCount / levelQuests.length) * 100)
       : 0;
 
+  const finaleBeat =
+    FINALE_BEATS[Math.min(finaleCutscene.step, FINALE_BEATS.length - 1)];
+
   return (
-    <div
-      className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4"
-      data-testid="game-hud"
-    >
-      {/* Visual-only underwater tint when submerged inside Level 3 Flooded Cistern */}
-      {underwaterTint && (
+    <>
+      {/* Smooth fall-respawn fade transition overlay */}
+      <div
+        className={`pointer-events-none fixed inset-0 z-40 bg-[#070d11] transition-opacity duration-200 ${
+          fallFadeActive ? 'opacity-100' : 'opacity-0'
+        }`}
+        data-testid="fall-fade-overlay"
+        aria-hidden="true"
+      />
+
+      {finaleCutscene.active ? (
         <div
-          className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-cyan-950/35 via-teal-900/40 to-cyan-950/55 transition-opacity duration-300"
-          data-testid="underwater-tint-overlay"
-        />
-      )}
+          className="pointer-events-none fixed inset-0 z-20 flex flex-col justify-between p-4 sm:p-6"
+          data-testid="finale-cutscene-overlay"
+        >
+          <div className="flex justify-end">
+            <button
+              type="button"
+              data-testid="finale-skip-btn"
+              onClick={(e) => {
+                e.currentTarget.blur();
+                finishFinaleCutscene();
+              }}
+              className="stone-btn pointer-events-auto rounded px-3.5 py-1.5 text-xs font-semibold"
+            >
+              Skip Cutscene
+            </button>
+          </div>
+
+          <div className="mx-auto w-full max-w-2xl">
+            <div className="stone-panel pointer-events-auto flex flex-col gap-3 rounded-md border-[#e0b86b]/70 p-5 shadow-2xl sm:p-6">
+              <div className="flex items-center justify-between gap-2">
+                <span className="font-mono text-[11px] tracking-widest text-[#e0b86b] uppercase">
+                  {finaleBeat.chapter}
+                </span>
+                <span className="font-mono text-[11px] text-[#9ee7dc]">
+                  {finaleCutscene.islandRestored
+                    ? 'Beacon Restored'
+                    : 'Echoes Awakening'}
+                </span>
+              </div>
+              <h2 className="font-display text-lg font-bold text-[#fbf0d8] sm:text-xl">
+                {finaleBeat.title}
+              </h2>
+              <p className="text-xs leading-relaxed text-[#e6dac0] sm:text-sm">
+                {finaleBeat.body}
+              </p>
+              <div className="flex justify-end pt-1">
+                <button
+                  type="button"
+                  data-testid="finale-next-btn"
+                  onClick={(e) => {
+                    e.currentTarget.blur();
+                    advanceFinaleCutscene();
+                  }}
+                  className="bronze-btn rounded px-5 py-2 text-xs font-semibold"
+                >
+                  {finaleCutscene.step >= FINALE_BEATS.length - 1
+                    ? 'Complete Expedition'
+                    : 'Continue'}
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      ) : (
+        <div
+          className="pointer-events-none fixed inset-0 z-10 flex flex-col justify-between p-3 sm:p-4"
+          data-testid="game-hud"
+        >
+          {/* Visual-only underwater tint when submerged inside Level 3 Flooded Cistern */}
+          {underwaterTint && (
+            <div
+              className="pointer-events-none fixed inset-0 -z-10 bg-gradient-to-b from-cyan-950/35 via-teal-900/40 to-cyan-950/55 transition-opacity duration-300"
+              data-testid="underwater-tint-overlay"
+            />
+          )}
 
       {/* Top Row: Fragment Tracker + Stamina (Left) | Objective & Crystals (Right) */}
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -270,8 +374,10 @@ export function GameHud() {
         </p>
       </div>
 
-      {/* Touch-only bottom-left virtual movement thumbstick */}
-      <VirtualJoystick />
-    </div>
+          {/* Touch-only bottom-left virtual movement thumbstick */}
+          <VirtualJoystick />
+        </div>
+      )}
+    </>
   );
 }

@@ -19,6 +19,8 @@ import {
   createExplorerCharacterController,
   dampAngle,
   getMovingPlatformDelta,
+  isIceCollider,
+  resolveHorizontalMoveConfig,
   stepStamina,
   stepVerticalKinematics,
   type StaminaState,
@@ -85,6 +87,7 @@ export function PlayerController({
   const staminaRef = useRef<StaminaState>({ value: 100, exhausted: false });
   const pendingTeleportRef = useRef<[number, number, number] | null>(null);
   const wasMountedRef = useRef(levelMounted);
+  const onIceRef = useRef(false);
 
   useEffect(() => {
     const controller = createExplorerCharacterController(world);
@@ -192,8 +195,12 @@ export function PlayerController({
     const dt = Math.min(rawDt, 0.05);
     const input = sampleInput(inputRef.current);
 
-    // Freeze movement while reading an ancient inscription
-    if (state.activeInscription) {
+    // Freeze movement while reading an inscription, fading on fall respawn, or watching finale cutscene
+    if (
+      state.activeInscription ||
+      state.fallFadeActive ||
+      state.finaleCutscene.active
+    ) {
       horizVelRef.current.x = 0;
       horizVelRef.current.z = 0;
       if (rig) {
@@ -242,6 +249,7 @@ export function PlayerController({
       isSprinting,
       vertStateRef.current.grounded,
       dt,
+      resolveHorizontalMoveConfig(onIceRef.current),
     );
 
     const vert = stepVerticalKinematics(
@@ -278,18 +286,25 @@ export function PlayerController({
     next.y = currentPos.y + computed.y;
     next.z = currentPos.z + computed.z;
 
-    // Carry player smoothly if standing on a moving platform
+    // Carry player smoothly if standing on a moving platform & detect slippery ice colliders
     const numCollisions = controller.numComputedCollisions();
+    let groundedOnIce = false;
+    let carriedByPlatform = false;
     for (let i = 0; i < numCollisions; i++) {
       const collision = controller.computedCollision(i);
       if (!collision || !collision.collider) continue;
       if (collision.normal1.y > 0.5) {
-        const pDelta = getMovingPlatformDelta(collision.collider.handle);
-        if (pDelta) {
-          next.x += pDelta.x;
-          next.y += pDelta.y;
-          next.z += pDelta.z;
-          break;
+        if (isIceCollider(collision.collider.handle)) {
+          groundedOnIce = true;
+        }
+        if (!carriedByPlatform) {
+          const pDelta = getMovingPlatformDelta(collision.collider.handle);
+          if (pDelta) {
+            next.x += pDelta.x;
+            next.y += pDelta.y;
+            next.z += pDelta.z;
+            carriedByPlatform = true;
+          }
         }
       }
     }
@@ -299,24 +314,24 @@ export function PlayerController({
     if (hitGround) {
       vert.grounded = true;
       vert.vy = -0.6;
+      onIceRef.current = groundedOnIce;
     } else {
       vert.grounded = false;
+      onIceRef.current = false;
       if (vert.vy > 0 && desired.y > 0.001 && computed.y < desired.y * 0.35) {
         vert.vy = 0;
       }
     }
 
-    // Fall-off safety: respawn at last checkpoint if dropping below y=-12
+    // Fall-off safety: trigger smooth fade respawn to last checkpoint when dropping below y = -12
     if (next.y < -12) {
-      const cp = state.checkpointPos;
-      next.x = cp[0];
-      next.y = cp[1] + COLLIDER_CENTER_Y;
-      next.z = cp[2];
       horiz.x = 0;
       horiz.z = 0;
       vert.vy = 0;
       vert.grounded = false;
-      state.showToast('Returned to last checkpoint');
+      onIceRef.current = false;
+      state.triggerFallRespawn('Returned to last checkpoint');
+      return;
     }
 
     body.setNextKinematicTranslation(next);
@@ -363,6 +378,7 @@ export function PlayerController({
     playerTelemetry.velocity.set(horiz.x, vert.grounded ? 0 : vert.vy, horiz.z);
     playerTelemetry.horizontalSpeed = horizSpeed;
     playerTelemetry.grounded = vert.grounded;
+    playerTelemetry.onIce = onIceRef.current;
     playerTelemetry.sprinting = isSprinting && horizSpeed > 5.8;
     playerTelemetry.stamina = staminaRef.current.value;
     playerTelemetry.staminaExhausted = staminaRef.current.exhausted;

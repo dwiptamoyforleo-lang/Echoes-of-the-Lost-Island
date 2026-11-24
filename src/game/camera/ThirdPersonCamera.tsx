@@ -25,6 +25,20 @@ const _desiredCamPos = new THREE.Vector3();
 const _rightVec = new THREE.Vector3();
 const _forwardDir = new THREE.Vector3();
 const _orbitTarget = new THREE.Vector3(0, 3.6, -6);
+const _cutsceneTarget = new THREE.Vector3();
+const _cutsceneCamPos = new THREE.Vector3();
+
+const FINALE_SHOTS: ReadonlyArray<{
+  cam: [number, number, number];
+  look: [number, number, number];
+  driftX: number;
+  driftY: number;
+}> = [
+  { cam: [4.8, 7.6, -26.5], look: [0, 6.2, -33.0], driftX: 0.35, driftY: 0.15 },
+  { cam: [-8.5, 11.2, -20.0], look: [0, 9.5, -33.0], driftX: -0.45, driftY: 0.3 },
+  { cam: [16.0, 15.5, -10.0], look: [0, 8.0, -28.0], driftX: 0.55, driftY: 0.2 },
+  { cam: [0.0, 21.0, 14.0], look: [0, 7.5, -24.0], driftX: 0.65, driftY: 0.15 },
+];
 
 export function ThirdPersonCamera() {
   const { camera, gl } = useThree();
@@ -34,6 +48,7 @@ export function ThirdPersonCamera() {
   const activeLevel = useGameStore((state) => state.activeLevel);
   const runId = useGameStore((state) => state.runId);
   const levelLoading = useGameStore((state) => state.levelLoading);
+  const finaleCutsceneActive = useGameStore((state) => state.finaleCutscene.active);
 
   const targetYawRef = useRef(0);
   const targetPitchRef = useRef(DEFAULT_PITCH);
@@ -62,7 +77,8 @@ export function ThirdPersonCamera() {
       if (
         st.screen !== 'playing' ||
         st.activeOverlay !== 'none' ||
-        st.activeInscription
+        st.activeInscription ||
+        st.finaleCutscene.active
       ) {
         return;
       }
@@ -89,7 +105,8 @@ export function ThirdPersonCamera() {
       if (
         st.screen !== 'playing' ||
         st.activeOverlay !== 'none' ||
-        st.activeInscription
+        st.activeInscription ||
+        st.finaleCutscene.active
       ) {
         return;
       }
@@ -112,7 +129,8 @@ export function ThirdPersonCamera() {
       if (
         st.screen !== 'playing' ||
         st.activeOverlay !== 'none' ||
-        st.activeInscription
+        st.activeInscription ||
+        st.finaleCutscene.active
       ) {
         return;
       }
@@ -134,7 +152,8 @@ export function ThirdPersonCamera() {
       if (
         st.screen !== 'playing' ||
         st.activeOverlay !== 'none' ||
-        st.activeInscription
+        st.activeInscription ||
+        st.finaleCutscene.active
       ) {
         dragPointerIdRef.current = null;
         return;
@@ -183,17 +202,18 @@ export function ThirdPersonCamera() {
   }, [gl]);
 
   useEffect(() => {
-    const blocked = screen !== 'playing' || activeOverlay !== 'none';
+    const blocked =
+      screen !== 'playing' || activeOverlay !== 'none' || finaleCutsceneActive;
     if (blocked && document.pointerLockElement === gl.domElement) {
       document.exitPointerLock?.();
     }
     if (blocked) {
       dragPointerIdRef.current = null;
     }
-    if (screen === 'playing') {
+    if (screen === 'playing' && !finaleCutsceneActive) {
       initializedRef.current = false;
     }
-  }, [screen, activeOverlay, gl]);
+  }, [screen, activeOverlay, finaleCutsceneActive, gl]);
 
   // Snap camera behind player whenever a new level or run starts
   useEffect(() => {
@@ -230,6 +250,32 @@ export function ThirdPersonCamera() {
 
       if (camera instanceof THREE.PerspectiveCamera && Math.abs(camera.fov - BASE_FOV) > 0.05) {
         camera.fov = BASE_FOV;
+        camera.updateProjectionMatrix();
+      }
+      return;
+    }
+
+    // Scripted 3D finale cutscene camera movement over The Sky Temple
+    if (storeState.finaleCutscene.active) {
+      const idx = Math.max(
+        0,
+        Math.min(FINALE_SHOTS.length - 1, storeState.finaleCutscene.step),
+      );
+      const shot = FINALE_SHOTS[idx];
+      const t = performance.now() * 0.001;
+      _cutsceneCamPos.set(
+        shot.cam[0] + Math.sin(t * 0.45) * shot.driftX,
+        shot.cam[1] + Math.cos(t * 0.38) * shot.driftY,
+        shot.cam[2],
+      );
+      _cutsceneTarget.set(shot.look[0], shot.look[1], shot.look[2]);
+      const cutAlpha = 1 - Math.exp(-2.8 * dt);
+      smoothedCamPosRef.current.lerp(_cutsceneCamPos, cutAlpha);
+      smoothedTargetRef.current.lerp(_cutsceneTarget, cutAlpha);
+      camera.position.copy(smoothedCamPosRef.current);
+      camera.lookAt(smoothedTargetRef.current);
+      if (camera instanceof THREE.PerspectiveCamera && Math.abs(camera.fov - 56) > 0.05) {
+        camera.fov = THREE.MathUtils.lerp(camera.fov, 56, cutAlpha);
         camera.updateProjectionMatrix();
       }
       return;

@@ -34,19 +34,19 @@ const ENDING_SLIDES: StorySlide[] = [
   {
     chapter: 'Epilogue · I',
     title: 'Five Echoes Reunited',
-    body: 'Tide, Ember, Zephyr, Aegis, and Horizon settle into the central cradle. Their golden frequencies lock into harmony across the flooded chambers.',
+    body: 'Tide, Gale, Stars, Frost, and Eternity settle into the Sky Temple cradle. Their golden frequencies lock into harmony high above the cloud sea.',
     art: 'reunion',
   },
   {
     chapter: 'Epilogue · II',
-    title: 'The Spire Awakens',
-    body: 'A beam of teal light pierces the storm clouds above the Citadel, banishing the static veil that kept the islanders’ memory locked away.',
+    title: 'The Sky Temple Awakens',
+    body: 'A radiant column of teal and amber light pierces the horizon above the floating sanctum, rekindling the ancient conduit across all five islands.',
     art: 'spire',
   },
   {
     chapter: 'Epilogue · III',
     title: 'A New Horizon',
-    body: 'With the ancient conduit restored, the archipelago breathes again. New charts await beyond the sunlit reef.',
+    body: 'From the Forgotten Shore to the Frozen Peaks, the Lost Archipelago breathes again. Your expedition is inscribed among its legends.',
     art: 'horizon',
   },
 ];

@@ -16,6 +16,20 @@ export const DEFAULT_HORIZONTAL_CONFIG: HorizontalMoveConfig = {
   airControlFactor: 0.55,
 };
 
+export const ICE_HORIZONTAL_CONFIG: HorizontalMoveConfig = {
+  walkSpeed: 6.3,
+  sprintSpeed: 9.8,
+  acceleration: 11.5,
+  deceleration: 3.1,
+  airControlFactor: 0.55,
+};
+
+export function resolveHorizontalMoveConfig(
+  onIce: boolean,
+): HorizontalMoveConfig {
+  return onIce ? ICE_HORIZONTAL_CONFIG : DEFAULT_HORIZONTAL_CONFIG;
+}
+
 export interface VerticalKinematicsConfig {
   gravity: number;
   fallGravityMultiplier: number;

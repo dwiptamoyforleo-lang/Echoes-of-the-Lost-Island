@@ -112,6 +112,7 @@ export function usePlayerInput() {
         }
         if (
           !state.activeInscription &&
+          !state.finaleCutscene.active &&
           (state.screen === 'playing' || state.screen === 'paused')
         ) {
           if (state.activeOverlay !== 'inventory') {
@@ -125,6 +126,7 @@ export function usePlayerInput() {
       if (code === 'KeyJ' && !event.repeat) {
         if (
           !state.activeInscription &&
+          !state.finaleCutscene.active &&
           (state.screen === 'playing' || state.screen === 'paused')
         ) {
           if (state.activeOverlay !== 'quests') {
@@ -137,6 +139,9 @@ export function usePlayerInput() {
 
       if (code === 'Escape') {
         if (!event.repeat) {
+          if (state.finaleCutscene.active) {
+            return;
+          }
           if (state.activeInscription) {
             state.closeInscription();
             return;
@@ -154,6 +159,10 @@ export function usePlayerInput() {
           }
           state.togglePause();
         }
+        return;
+      }
+
+      if (state.finaleCutscene.active) {
         return;
       }
 
@@ -201,11 +210,13 @@ export function usePlayerInput() {
       const currBlocked =
         curr.screen !== 'playing' ||
         curr.activeOverlay !== 'none' ||
-        Boolean(curr.activeInscription);
+        Boolean(curr.activeInscription) ||
+        curr.finaleCutscene.active;
       const prevBlocked =
         prev.screen !== 'playing' ||
         prev.activeOverlay !== 'none' ||
-        Boolean(prev.activeInscription);
+        Boolean(prev.activeInscription) ||
+        prev.finaleCutscene.active;
       if (currBlocked && !prevBlocked) {
         clearInputs();
       }

@@ -6,6 +6,9 @@ export {
   stepVerticalKinematics,
   stepStamina,
   dampAngle,
+  DEFAULT_HORIZONTAL_CONFIG,
+  ICE_HORIZONTAL_CONFIG,
+  resolveHorizontalMoveConfig,
   type Vec2XZ,
   type VerticalKinematicsState,
   type StaminaState,
@@ -16,4 +19,9 @@ export {
   getMovingPlatformDelta,
   removeMovingPlatformDelta,
 } from './movingPlatforms';
+export {
+  registerIceCollider,
+  unregisterIceCollider,
+  isIceCollider,
+} from './iceSurfaces';
 export { isPlayerPayload } from './sensorHelpers';

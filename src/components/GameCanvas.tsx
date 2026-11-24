@@ -31,8 +31,8 @@ const LEVEL_BG_CLASSES: Record<ActiveLevelId, string> = {
   level1: 'bg-[#94cbe8]',
   level2: 'bg-[#122e26]',
   level3: 'bg-[#050c10]',
-  level4: 'bg-[#5b4036]',
-  level5: 'bg-[#c2d8ef]',
+  level4: 'bg-[#16283d]',
+  level5: 'bg-[#58295b]',
 };
 
 function SceneSuspenseBeacon() {

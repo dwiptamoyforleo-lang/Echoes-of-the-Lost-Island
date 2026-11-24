@@ -25,6 +25,9 @@ const NODE_COORDS: MapNodeCoord[] = [
 export function WorldMapScreen() {
   const screen = useGameStore((s) => s.screen);
   const progression = useGameStore((s) => s.progression);
+  const gameCompleted = useGameStore(
+    (s) => s.gameCompleted || s.progression.level5.completed,
+  );
   const activeLevel = useGameStore((s) => s.activeLevel);
   const startLevel = useGameStore((s) => s.startLevel);
   const setScreen = useGameStore((s) => s.setScreen);
@@ -53,9 +56,19 @@ export function WorldMapScreen() {
 
         <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#c79d52]/30 pb-3">
           <div>
-            <h2 className="font-display text-xl font-bold tracking-wide text-[#f7ebd2] sm:text-2xl">
-              Chart of the Lost Archipelago
-            </h2>
+            <div className="flex flex-wrap items-center gap-2.5">
+              <h2 className="font-display text-xl font-bold tracking-wide text-[#f7ebd2] sm:text-2xl">
+                Chart of the Lost Archipelago
+              </h2>
+              {gameCompleted && (
+                <span
+                  data-testid="world-map-complete-badge"
+                  className="rounded border border-[#e0b86b]/70 bg-[#184f4a]/90 px-2.5 py-0.5 font-mono text-[11px] font-semibold text-[#f8e4b7]"
+                >
+                  Game Complete · Archipelago Restored
+                </span>
+              )}
+            </div>
             <p className="text-xs text-[#bfb195]">
               Select an unlocked region to embark on an expedition
             </p>
@@ -379,8 +392,8 @@ export function WorldMapScreen() {
                     level1: 'Shore',
                     level2: 'Woods',
                     level3: 'Sunken',
-                    level4: 'Caldera',
-                    level5: 'Spire',
+                    level4: 'Peaks',
+                    level5: 'Temple',
                   };
                   return (
                     <button

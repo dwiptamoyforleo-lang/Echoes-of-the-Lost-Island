@@ -9,6 +9,7 @@ import {
 import {
   completeLevelProgress,
   createInitialProgression,
+  getLevelMetadata,
   recordLevelChest,
   recordLevelCrystal,
 } from './progressionSystem';
@@ -242,5 +243,38 @@ test('Stage 4 extended settings persist and UI overlay/settings transitions rest
   assert.equal(useGameStore.getState().screen, 'settings');
   useGameStore.getState().closeSettings();
   assert.equal(useGameStore.getState().screen, 'paused');
+});
+
+test('Stage 6 configures Level 4 (30 crystals, 2 chests) and Level 5 (35 crystals, 2 chests) and persists gameCompleted', () => {
+  const l4 = getLevelMetadata('level4');
+  const l5 = getLevelMetadata('level5');
+  assert.equal(l4.name, 'The Frozen Peaks');
+  assert.equal(l4.totalCrystals, 30);
+  assert.equal(l4.totalChests, 2);
+  assert.equal(l4.fragmentName, 'Echo of the Frost');
+
+  assert.equal(l5.name, 'The Sky Temple');
+  assert.equal(l5.totalCrystals, 35);
+  assert.equal(l5.totalChests, 2);
+  assert.equal(l5.fragmentName, 'Echo of Eternity');
+
+  const storage = createMemoryStorage();
+  useGameStore.getState().newGame(storage);
+  useGameStore.getState().startLevel('level5');
+  useGameStore.getState().startFinaleCutscene();
+  useGameStore.getState().finishFinaleCutscene();
+  useGameStore.getState().saveCurrentGame(true, storage);
+
+  assert.equal(useGameStore.getState().screen, 'ending');
+  assert.equal(useGameStore.getState().gameCompleted, true);
+  assert.equal(useGameStore.getState().progression.level5.completed, true);
+
+  // Verify gameCompleted survives save/reload roundtrip
+  useGameStore.getState().resetProgress();
+  assert.equal(useGameStore.getState().gameCompleted, false);
+  const loaded = useGameStore.getState().continueSavedGame(storage);
+  assert.equal(loaded, true);
+  assert.equal(useGameStore.getState().gameCompleted, true);
+  assert.equal(useGameStore.getState().progression.level5.completed, true);
 });
 

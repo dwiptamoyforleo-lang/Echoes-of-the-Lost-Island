@@ -5,6 +5,7 @@ export interface PlayerTelemetry {
   velocity: THREE.Vector3;
   horizontalSpeed: number;
   grounded: boolean;
+  onIce: boolean;
   sprinting: boolean;
   stamina: number;
   staminaExhausted: boolean;
@@ -17,6 +18,7 @@ export const playerTelemetry: PlayerTelemetry = {
   velocity: new THREE.Vector3(0, 0, 0),
   horizontalSpeed: 0,
   grounded: true,
+  onIce: false,
   sprinting: false,
   stamina: 100,
   staminaExhausted: false,

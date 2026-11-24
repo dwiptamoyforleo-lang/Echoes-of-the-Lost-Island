@@ -51,23 +51,23 @@ export const ANCIENT_FRAGMENTS: readonly InventoryItemDefinition[] = [
   },
   {
     id: 'fragment-4',
-    name: 'Echo of the Ember',
-    description: 'Fourth Ancient Fragment forged in the Obsidian Caldera.',
+    name: 'Echo of the Frost',
+    description: 'Fourth Ancient Fragment sealed within The Frozen Peaks.',
     iconId: 'fragment',
     category: 'fragment',
     levelOfOrigin: 'level4',
     loreText:
-      'Warm to the touch, this crystalline heart regulated the geothermal conduits that powered the civilization’s stone mechanisms.',
+      'Crystallized inside an aurora-lit glacier, this fragment preserved the builders’ sun-prisms and kept time suspended until the ancient seals could be mended.',
   },
   {
     id: 'fragment-5',
     name: 'Echo of Eternity',
-    description: 'Fifth Ancient Fragment resting atop the Heart of the Spire.',
+    description: 'Fifth Ancient Fragment resting atop The Sky Temple.',
     iconId: 'fragment',
     category: 'fragment',
     levelOfOrigin: 'level5',
     loreText:
-      'The keystone resonance that binds the four elements together, sealing the memory of why the islanders chose to slumber.',
+      'The keystone resonance of the Sky Temple that reunites all four elemental echoes and restores the living light across the archipelago.',
   },
 ];
 
@@ -136,10 +136,51 @@ export const ITEM_CATALOG: Record<string, InventoryItemDefinition> = {
     category: 'relic',
     levelOfOrigin: 'level3',
   },
+  'relic-frostweave-mantle': {
+    id: 'relic-frostweave-mantle',
+    name: 'Frostweave Mantle',
+    description: 'Woven silver-thread cloak found atop the Glacial Spire in The Frozen Peaks.',
+    iconId: 'relic',
+    category: 'relic',
+    levelOfOrigin: 'level4',
+  },
+  'relic-aurora-prism': {
+    id: 'relic-aurora-prism',
+    name: 'Aurora Prism',
+    description: 'Refractive ice-crystal lens sealed behind the cracked cavern wall.',
+    iconId: 'compass',
+    category: 'relic',
+    levelOfOrigin: 'level4',
+  },
+  'key-sky': {
+    id: 'key-sky',
+    name: 'Sky Temple Key',
+    description: 'Sun-forged key unlocking the Eastern Vault inside The Sky Temple.',
+    iconId: 'key',
+    category: 'key',
+    levelOfOrigin: 'level5',
+  },
+  'relic-celestial-astrolabe': {
+    id: 'relic-celestial-astrolabe',
+    name: 'Celestial Astrolabe',
+    description: 'Gilded star-chart recovered from the Western Floating Isle.',
+    iconId: 'compass',
+    category: 'relic',
+    levelOfOrigin: 'level5',
+  },
+  'relic-dawnfire-diadem': {
+    id: 'relic-dawnfire-diadem',
+    name: 'Dawnfire Diadem',
+    description: 'Golden-hour crown sealed inside the Eastern Sky Vault.',
+    iconId: 'relic',
+    category: 'relic',
+    levelOfOrigin: 'level5',
+  },
+  // Legacy aliases kept for older saves
   'key-caldera': {
     id: 'key-caldera',
     name: 'Obsidian Seal Key',
-    description: 'Volcanic glass key forged beside the Obsidian Caldera vents.',
+    description: 'Ancient seal key from earlier expedition records.',
     iconId: 'key',
     category: 'key',
     levelOfOrigin: 'level4',
@@ -147,7 +188,7 @@ export const ITEM_CATALOG: Record<string, InventoryItemDefinition> = {
   'relic-ember-core': {
     id: 'relic-ember-core',
     name: 'Ember Core',
-    description: 'Contained geothermal crystal from the Caldera western ridge.',
+    description: 'Contained geothermal crystal from earlier expedition records.',
     iconId: 'relic',
     category: 'relic',
     levelOfOrigin: 'level4',
@@ -155,7 +196,7 @@ export const ITEM_CATALOG: Record<string, InventoryItemDefinition> = {
   'key-spire': {
     id: 'key-spire',
     name: 'Spire Keystone',
-    description: 'Gilded keystone unlocking the Spire Resonance Vault.',
+    description: 'Gilded keystone from earlier expedition records.',
     iconId: 'key',
     category: 'key',
     levelOfOrigin: 'level5',
@@ -163,7 +204,7 @@ export const ITEM_CATALOG: Record<string, InventoryItemDefinition> = {
   'relic-eternity-diadem': {
     id: 'relic-eternity-diadem',
     name: 'Eternity Diadem',
-    description: 'Ceremonial crown kept atop the Skyward Resonance Terrace.',
+    description: 'Ceremonial crown from earlier expedition records.',
     iconId: 'relic',
     category: 'relic',
     levelOfOrigin: 'level5',

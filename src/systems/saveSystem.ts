@@ -60,6 +60,7 @@ export interface SaveDataV1 {
   settings: GameSettings;
   playtimeSeconds: number;
   worldState?: PersistedWorldState;
+  gameCompleted?: boolean;
 }
 
 export interface StorageLike {
@@ -287,6 +288,7 @@ export function parseSaveData(raw: string): LoadSaveResult {
       worldState: parsed.worldState
         ? sanitizeWorldState(parsed.worldState)
         : createEmptyWorldState(),
+      gameCompleted: Boolean(parsed.gameCompleted),
     };
 
     return { data, corrupted: false };

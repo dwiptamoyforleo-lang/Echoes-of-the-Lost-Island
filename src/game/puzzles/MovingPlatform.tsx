@@ -7,8 +7,10 @@ import {
   type RapierRigidBody,
 } from '@react-three/rapier';
 import {
+  registerIceCollider,
   removeMovingPlatformDelta,
   setMovingPlatformDelta,
+  unregisterIceCollider,
 } from '@/src/game/physics';
 import { useGameStore } from '@/src/state/gameStore';
 
@@ -20,6 +22,8 @@ export interface MovingPlatformProps {
   size?: [number, number, number];
   speed?: number;
   color?: string;
+  accentColor?: string;
+  isIce?: boolean;
 }
 
 export function MovingPlatform({
@@ -30,6 +34,8 @@ export function MovingPlatform({
   size = [3.6, 0.5, 3.6],
   speed = 0.45,
   color = '#748279',
+  accentColor = '#2dd4bf',
+  isIce = false,
 }: MovingPlatformProps) {
   const bodyRef = useRef<RapierRigidBody>(null);
   const colliderRef = useRef<RapierCollider>(null);
@@ -53,9 +59,14 @@ export function MovingPlatform({
   });
 
   useEffect(() => {
+    const col = colliderRef.current;
+    if (isIce && col) {
+      registerIceCollider(col.handle);
+    }
     return () => {
-      if (colliderRef.current) {
-        removeMovingPlatformDelta(colliderRef.current.handle);
+      if (col) {
+        unregisterIceCollider(col.handle);
+        removeMovingPlatformDelta(col.handle);
       }
       // Persist platform phase on unmount so remounting the chunk resumes seamlessly
       useGameStore.getState().setWorldObjectState(id, {
@@ -63,7 +74,7 @@ export function MovingPlatform({
         phase: timeRef.current,
       });
     };
-  }, [id, chunkId]);
+  }, [id, chunkId, isIce]);
 
   useFrame((_, rawDt) => {
     const body = bodyRef.current;
@@ -108,15 +119,21 @@ export function MovingPlatform({
       />
       <mesh castShadow receiveShadow>
         <boxGeometry args={size} />
-        <meshStandardMaterial color={color} roughness={0.78} metalness={0.08} />
+        <meshStandardMaterial
+          color={color}
+          roughness={isIce ? 0.18 : 0.78}
+          metalness={isIce ? 0.14 : 0.08}
+          transparent={isIce}
+          opacity={isIce ? 0.88 : 1}
+        />
       </mesh>
       <mesh position={[0, size[1] / 2 + 0.01, 0]}>
         <boxGeometry args={[size[0] * 0.72, 0.03, size[2] * 0.72]} />
         <meshStandardMaterial
-          color="#2dd4bf"
-          emissive="#0f766e"
-          emissiveIntensity={0.45}
-          roughness={0.4}
+          color={accentColor}
+          emissive={accentColor}
+          emissiveIntensity={0.55}
+          roughness={0.35}
         />
       </mesh>
     </RigidBody>

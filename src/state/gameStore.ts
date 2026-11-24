@@ -123,6 +123,13 @@ export interface GameState {
   checkpointPos: [number, number, number];
   recoveredFragmentName: string | null;
   underwaterTint: boolean;
+  fallFadeActive: boolean;
+  gameCompleted: boolean;
+  finaleCutscene: {
+    active: boolean;
+    step: number;
+    islandRestored: boolean;
+  };
 
   setScreen: (screen: GameScreen) => void;
   startLevel: (level: ActiveLevelId) => void;
@@ -179,6 +186,11 @@ export interface GameState {
     levelId?: LevelId,
   ) => void;
   setUnderwaterTint: (active: boolean) => void;
+  setFallFadeActive: (active: boolean) => void;
+  triggerFallRespawn: (message?: string) => void;
+  startFinaleCutscene: () => void;
+  advanceFinaleCutscene: () => void;
+  finishFinaleCutscene: () => void;
   showToast: (message: string | null, kind?: ToastKind) => void;
   dismissToast: (id: number) => void;
   setCheckpoint: (pos: [number, number, number]) => void;
@@ -208,11 +220,11 @@ const VALID_SCREENS: readonly GameScreen[] = [
 
 const LEVEL_SEAL_IDS: Partial<Record<LevelId, readonly string[]>> = {
   level1: ['switch-west', 'switch-east', 'plate-courtyard'],
-  level4: ['l4-switch-west', 'l4-switch-east', 'l4-plate-hearth'],
-  level5: ['l5-switch-west', 'l5-switch-east', 'l5-plate-summit'],
 };
 let nextToastSeq = 1;
 let debouncedSaveTimer: ReturnType<typeof setTimeout> | null = null;
+let fallFadeTimer: ReturnType<typeof setTimeout> | null = null;
+let fallClearTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function resolveInitialScreen(search?: string): GameScreen {
   const query =
@@ -309,6 +321,7 @@ function buildSavePayload(state: GameState): SaveDataV1 {
     settings: state.settings,
     playtimeSeconds: state.playtimeSeconds,
     worldState: state.worldState,
+    gameCompleted: state.gameCompleted || Boolean(state.progression.level5.completed),
   };
 }
 
@@ -403,6 +416,10 @@ function makeInitialState() {
       checkpointPos: saved.checkpointPos,
       recoveredFragmentName: null,
       underwaterTint: false,
+      fallFadeActive: false,
+      gameCompleted:
+        Boolean(saved.gameCompleted) || Boolean(saved.progression.level5.completed),
+      finaleCutscene: { active: false, step: 0, islandRestored: false },
     };
   }
 
@@ -458,6 +475,9 @@ function makeInitialState() {
     checkpointPos: getDefaultSpawn(initialLevel),
     recoveredFragmentName: null,
     underwaterTint: false,
+    fallFadeActive: false,
+    gameCompleted: false,
+    finaleCutscene: { active: false, step: 0, islandRestored: false },
   };
 }
 
@@ -536,6 +556,8 @@ export const useGameStore = create<GameState>((set, get) => {
           checkpointPos: defaultSpawn,
           recoveredFragmentName: null,
           underwaterTint: false,
+          fallFadeActive: false,
+          finaleCutscene: { active: false, step: 0, islandRestored: false },
           levelElapsedSeconds: 0,
         });
         return;
@@ -587,6 +609,8 @@ export const useGameStore = create<GameState>((set, get) => {
         checkpointPos: defaultSpawn,
         recoveredFragmentName: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        finaleCutscene: { active: false, step: 0, islandRestored: false },
         levelElapsedSeconds: 0,
       });
     },
@@ -663,6 +687,10 @@ export const useGameStore = create<GameState>((set, get) => {
         checkpointPos: data.checkpointPos,
         recoveredFragmentName: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted:
+          Boolean(data.gameCompleted) || Boolean(data.progression.level5.completed),
+        finaleCutscene: { active: false, step: 0, islandRestored: false },
       }));
       return true;
     },
@@ -704,6 +732,9 @@ export const useGameStore = create<GameState>((set, get) => {
         checkpointPos: spawn,
         recoveredFragmentName: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted: false,
+        finaleCutscene: { active: false, step: 0, islandRestored: false },
       }));
     },
 
@@ -743,6 +774,9 @@ export const useGameStore = create<GameState>((set, get) => {
         checkpointPos: spawn,
         recoveredFragmentName: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted: false,
+        finaleCutscene: { active: false, step: 0, islandRestored: false },
       }));
     },
 
@@ -799,6 +833,9 @@ export const useGameStore = create<GameState>((set, get) => {
         checkpointPos: spawn,
         recoveredFragmentName: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted: false,
+        finaleCutscene: { active: false, step: 0, islandRestored: false },
       }));
       pushToast('Progress reset', 'info');
     },
@@ -1290,6 +1327,103 @@ export const useGameStore = create<GameState>((set, get) => {
         state.underwaterTint === active ? state : { underwaterTint: active },
       ),
 
+    setFallFadeActive: (active) =>
+      set((state) =>
+        state.fallFadeActive === active ? state : { fallFadeActive: active },
+      ),
+
+    triggerFallRespawn: (message = 'Returned to last checkpoint') => {
+      const state = get();
+      if (state.fallFadeActive) return;
+      state.setUnderwaterTint(false);
+      pushToast(message, 'info');
+
+      if (typeof window === 'undefined') {
+        eventBus.emit('player:respawn', { position: state.checkpointPos });
+        return;
+      }
+
+      if (fallFadeTimer !== null) clearTimeout(fallFadeTimer);
+      if (fallClearTimer !== null) clearTimeout(fallClearTimer);
+
+      set({ fallFadeActive: true });
+      fallFadeTimer = setTimeout(() => {
+        fallFadeTimer = null;
+        const cur = get();
+        eventBus.emit('player:respawn', { position: cur.checkpointPos });
+        fallClearTimer = setTimeout(() => {
+          fallClearTimer = null;
+          set({ fallFadeActive: false });
+        }, 220);
+      }, 220);
+    },
+
+    startFinaleCutscene: () => {
+      set({
+        activePrompt: null,
+        activeInscription: null,
+        activeOverlay: 'none',
+        finaleCutscene: { active: true, step: 0, islandRestored: false },
+      });
+      playPooledSynth('fragment');
+    },
+
+    advanceFinaleCutscene: () => {
+      const cur = get().finaleCutscene;
+      if (!cur.active) return;
+      const nextStep = cur.step + 1;
+      if (nextStep >= 4) {
+        get().finishFinaleCutscene();
+        return;
+      }
+      set({
+        finaleCutscene: {
+          active: true,
+          step: nextStep,
+          islandRestored: nextStep >= 1,
+        },
+      });
+    },
+
+    finishFinaleCutscene: () => {
+      const state = get();
+      const levelId: LevelId = 'level5';
+      const meta = getLevelMetadata(levelId);
+      const nextProgression = completeLevelProgress(
+        state.progression,
+        levelId,
+        state.levelElapsedSeconds,
+      );
+      const nextFragments = state.recoveredFragments.includes(meta.fragmentId)
+        ? state.recoveredFragments
+        : [...state.recoveredFragments, meta.fragmentId];
+      const nextItems = addItemToInventory(
+        state.inventoryItems,
+        meta.fragmentId,
+        1,
+      );
+
+      set({
+        screen: 'ending',
+        recoveredFragmentName: meta.fragmentName,
+        progression: nextProgression,
+        recoveredFragments: nextFragments,
+        inventoryItems: nextItems,
+        inventory: nextItems
+          .filter((i) => i.category !== 'crystal' && i.category !== 'key')
+          .map((i) => i.name),
+        activePrompt: null,
+        activeInscription: null,
+        underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted: true,
+        finaleCutscene: { active: false, step: 0, islandRestored: true },
+      });
+
+      applyQuestAndNotify({ type: 'fragment', levelId }, state.activeLevel);
+      get().saveCurrentGame(false);
+    },
+
     showToast: (message, kind = 'info') => {
       if (message === null) {
         set({ toastMessage: null });
@@ -1345,6 +1479,11 @@ export const useGameStore = create<GameState>((set, get) => {
         activePrompt: null,
         activeInscription: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted:
+          state.gameCompleted ||
+          levelId === 'level5' ||
+          Boolean(nextProgression.level5.completed),
       });
 
       applyQuestAndNotify({ type: 'fragment', levelId }, state.activeLevel);
@@ -1377,6 +1516,9 @@ export const useGameStore = create<GameState>((set, get) => {
         checkpointPos: spawnPos,
         recoveredFragmentName: null,
         underwaterTint: false,
+        fallFadeActive: false,
+        gameCompleted: false,
+        finaleCutscene: { active: false, step: 0, islandRestored: false },
         levelElapsedSeconds: 0,
       }),
 
