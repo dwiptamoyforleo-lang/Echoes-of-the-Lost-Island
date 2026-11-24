@@ -1,4 +1,5 @@
 import { useEffect } from 'react';
+import { GAME_TITLE } from '@/src/config/gameInfo';
 import { AppErrorBoundary } from '@/src/components/AppErrorBoundary';
 import { GameCanvas } from '@/src/components/GameCanvas';
 import { useGameStore } from '@/src/state/gameStore';
@@ -59,7 +60,7 @@ export default function App() {
     <main
       className="relative h-screen w-screen overflow-hidden"
       data-testid="game-viewport"
-      aria-label="Echoes of the Lost Island 3D Viewport"
+      aria-label={`${GAME_TITLE} 3D Viewport`}
     >
       <AppErrorBoundary scope="canvas">
         <GameCanvas />
