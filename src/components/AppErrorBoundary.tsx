@@ -1,4 +1,5 @@
 import { Component, type ErrorInfo, type ReactNode } from 'react';
+import { GAME_TITLE } from '@/src/config/gameInfo';
 import {
   SAVE_STORAGE_KEY,
   SETTINGS_STORAGE_KEY,
@@ -39,7 +40,7 @@ export class AppErrorBoundary extends Component<
   }
 
   componentDidCatch(error: Error, info: ErrorInfo): void {
-    console.error('[Echoes] Uncaught UI/3D boundary error:', error, info.componentStack);
+    console.error('[Journey Home] Uncaught UI/3D boundary error:', error, info.componentStack);
   }
 
   componentDidMount(): void {
@@ -67,7 +68,7 @@ export class AppErrorBoundary extends Component<
     const err = event.error
       ? normalizeError(event.error)
       : new Error(msg || 'Unknown window runtime error');
-    console.error('[Echoes] Uncaught window error:', err);
+    console.error('[Journey Home] Uncaught window error:', err);
     this.setState((prev) =>
       prev.error ? prev : { error: err, errorSource: 'Runtime Error' },
     );
@@ -75,7 +76,7 @@ export class AppErrorBoundary extends Component<
 
   private handleUnhandledRejection = (event: PromiseRejectionEvent) => {
     const err = normalizeError(event.reason);
-    console.error('[Echoes] Unhandled promise rejection:', err);
+    console.error('[Journey Home] Unhandled promise rejection:', err);
     this.setState((prev) =>
       prev.error ? prev : { error: err, errorSource: 'Async Startup Error' },
     );
@@ -106,6 +107,7 @@ export class AppErrorBoundary extends Component<
     return (
       <div
         role="alert"
+        aria-label={`${GAME_TITLE} error screen`}
         data-testid={isCanvas ? 'canvas-error-fallback' : 'root-error-fallback'}
         style={{
           position: isCanvas ? 'absolute' : 'fixed',
