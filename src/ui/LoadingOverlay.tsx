@@ -49,7 +49,7 @@ export function LoadingOverlay() {
         <div>
           <p className="font-display text-xs font-bold tracking-widest text-[#f7ebd2]">{GAME_TITLE}</p>
           <p className="mt-1 text-[10px] text-[#b8aa8e]">{GAME_TAGLINE}</p>
-          <p className="mt-3 font-mono text-[11px tracking-widest text-[#c79d52] uppercase">
+          <p className="mt-3 font-mono text-[11px] tracking-widest text-[#c79d52] uppercase">
             Charting Horizon
           </p>
           <h2 className="font-display mt-1 text-lg font-bold text-[#f7ebd2]">
