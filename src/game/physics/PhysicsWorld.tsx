@@ -12,7 +12,7 @@ function RapierInitLogger() {
     if (!loggedRapierInit && rapier) {
       loggedRapierInit = true;
       console.info(
-        `[Echoes] rapier=initialized (${rapier.version?.() ?? 'wasm-ready'})`,
+        `[Journey Home] rapier=initialized (${rapier.version?.() ?? 'wasm-ready'})`,
       );
     }
   }, [rapier]);
