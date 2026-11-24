@@ -1,29 +1,22 @@
-import { useEffect, useRef, useState } from 'react';
+import { memo, useEffect, useRef, useState } from 'react';
 import {
   resetVirtualJoystickMove,
   setVirtualJoystickMove,
 } from '@/src/game/player/usePlayerInput';
 import { useGameStore } from '@/src/state/gameStore';
+import { useInputMode } from '@/src/systems/inputMode';
 
 const MAX_RADIUS_PX = 38;
 const DEADZONE = 0.12;
 
-function detectTouchCapable(): boolean {
-  if (typeof window === 'undefined') return false;
-  if (window.matchMedia?.('(pointer: coarse)').matches) return true;
-  if ('ontouchstart' in window) return true;
-  if (typeof navigator !== 'undefined' && navigator.maxTouchPoints > 0) return true;
-  return false;
-}
-
-export function VirtualJoystick() {
+function VirtualJoystickInner() {
+  const inputMode = useInputMode();
   const screen = useGameStore((s) => s.screen);
   const activeOverlay = useGameStore((s) => s.activeOverlay);
   const activeInscription = useGameStore((s) => s.activeInscription);
+  const finaleCutsceneActive = useGameStore((s) => s.finaleCutscene.active);
+  const fallFadeActive = useGameStore((s) => s.fallFadeActive);
 
-  const [isTouchDevice, setIsTouchDevice] = useState<boolean>(() =>
-    detectTouchCapable(),
-  );
   const [knobOffset, setKnobOffset] = useState<{ x: number; y: number }>({
     x: 0,
     y: 0,
@@ -33,25 +26,13 @@ export function VirtualJoystick() {
   const baseRef = useRef<HTMLDivElement>(null);
   const pointerIdRef = useRef<number | null>(null);
 
-  useEffect(() => {
-    if (isTouchDevice) return;
-    const onFirstTouch = () => {
-      setIsTouchDevice(true);
-    };
-    window.addEventListener('touchstart', onFirstTouch, {
-      passive: true,
-      once: true,
-    });
-    return () => {
-      window.removeEventListener('touchstart', onFirstTouch);
-    };
-  }, [isTouchDevice]);
-
   const active =
-    isTouchDevice &&
+    inputMode === 'touch' &&
     screen === 'playing' &&
     activeOverlay === 'none' &&
-    !activeInscription;
+    !activeInscription &&
+    !finaleCutsceneActive &&
+    !fallFadeActive;
 
   useEffect(() => {
     if (!active) {
@@ -118,7 +99,11 @@ export function VirtualJoystick() {
         e.preventDefault();
         e.stopPropagation();
         pointerIdRef.current = e.pointerId;
-        e.currentTarget.setPointerCapture?.(e.pointerId);
+        try {
+          e.currentTarget.setPointerCapture?.(e.pointerId);
+        } catch {
+          // Ignore environments where pointer capture is unavailable
+        }
         setEngaged(true);
         updateStickFromPoint(e.clientX, e.clientY);
       }}
@@ -144,14 +129,17 @@ export function VirtualJoystick() {
           releaseStick();
         }
       }}
-      className="pointer-events-auto fixed bottom-6 left-5 z-20 flex h-28 w-28 touch-none items-center justify-center rounded-full border border-[#c79d52]/55 select-none sm:bottom-8 sm:left-8"
+      className="pointer-events-auto fixed z-20 flex h-28 w-28 touch-none items-center justify-center rounded-full border border-[#c79d52]/55 select-none"
       style={{
+        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
+        left: 'calc(env(safe-area-inset-left, 0px) + 1.25rem)',
         backgroundColor: engaged
           ? 'rgba(18, 26, 28, 0.58)'
           : 'rgba(18, 26, 28, 0.42)',
         boxShadow:
           '0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 18px rgba(45, 212, 191, 0.14)',
         touchAction: 'none',
+        userSelect: 'none',
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
       }}
@@ -185,3 +173,5 @@ export function VirtualJoystick() {
     </div>
   );
 }
+
+export const VirtualJoystick = memo(VirtualJoystickInner);

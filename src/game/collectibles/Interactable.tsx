@@ -10,9 +10,13 @@ import { isPlayerPayload } from '@/src/game/physics';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
 
+export { triggerInteract } from '@/src/systems/interaction';
+
 export interface InteractableProps {
   id: string;
   prompt: string;
+  actionLabel?: string;
+  informationalOnly?: boolean;
   position?: [number, number, number];
   radius?: number;
   boxHalfExtents?: [number, number, number];
@@ -24,6 +28,8 @@ export interface InteractableProps {
 export function Interactable({
   id,
   prompt,
+  actionLabel,
+  informationalOnly = false,
   position = [0, 0, 0],
   radius = 2.1,
   boxHalfExtents,
@@ -39,8 +45,15 @@ export function Interactable({
     if (disabled) {
       inRangeRef.current = false;
       useGameStore.getState().clearActivePromptIfId(id);
+    } else if (inRangeRef.current) {
+      useGameStore.getState().setActivePrompt({
+        id,
+        label: prompt,
+        actionLabel,
+        requiresPrefix: !informationalOnly,
+      });
     }
-  }, [disabled, id]);
+  }, [disabled, id, prompt, actionLabel, informationalOnly]);
 
   useEffect(() => {
     const unsub = eventBus.on('player:interact', () => {
@@ -53,6 +66,7 @@ export function Interactable({
 
     return () => {
       unsub();
+      inRangeRef.current = false;
       useGameStore.getState().clearActivePromptIfId(id);
     };
   }, [id, disabled]);
@@ -60,7 +74,12 @@ export function Interactable({
   const handleEnter = (payload: IntersectionEnterPayload) => {
     if (disabled || !isPlayerPayload(payload)) return;
     inRangeRef.current = true;
-    useGameStore.getState().setActivePrompt({ id, label: prompt });
+    useGameStore.getState().setActivePrompt({
+      id,
+      label: prompt,
+      actionLabel,
+      requiresPrefix: !informationalOnly,
+    });
   };
 
   const handleExit = (payload: IntersectionExitPayload) => {

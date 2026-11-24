@@ -64,6 +64,8 @@ export function CrackedIceWall({
         <Interactable
           id={`ice-wall-hint-${id}`}
           prompt={lockedMessage}
+          actionLabel="Inspect"
+          informationalOnly
           position={[0, 1.2, 0]}
           radius={2.8}
           onInteract={() => {

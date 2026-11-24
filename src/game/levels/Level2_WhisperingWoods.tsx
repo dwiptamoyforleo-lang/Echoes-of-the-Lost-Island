@@ -518,8 +518,10 @@ function ForestSpiritTotem({
         prompt={
           solved || active
             ? `${label} Spirit Awakened`
-            : `Press E to Awaken ${label} Spirit Totem`
+            : `Awaken ${label} Spirit Totem`
         }
+        actionLabel={solved || active ? 'Awakened' : 'Awaken'}
+        informationalOnly={solved || active}
         radius={2.5}
         disabled={solved || active}
         onInteract={() => onAwaken(id)}

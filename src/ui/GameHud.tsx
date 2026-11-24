@@ -1,10 +1,12 @@
-import { useEffect, useRef } from 'react';
+import { memo, useEffect, useRef } from 'react';
 import { playerTelemetry } from '@/src/game/player/playerTelemetry';
 import { useGameStore, type ToastKind } from '@/src/state/gameStore';
 import { ANCIENT_FRAGMENTS } from '@/src/systems/inventorySystem';
+import { getInteractLabel, useInputMode } from '@/src/systems/inputMode';
 import { DialogueBox } from './DialogueBox';
 import { ItemIcon } from './ItemIcon';
 import { FragmentEmblem } from './RuneOrnaments';
+import { TouchInteractButton } from './TouchInteractButton';
 import { VirtualJoystick } from './VirtualJoystick';
 
 const TOAST_BORDER_COLORS: Record<ToastKind, string> = {
@@ -70,15 +72,42 @@ function ToastItem({
   );
 }
 
+const InteractionPromptBanner = memo(function InteractionPromptBanner() {
+  const inputMode = useInputMode();
+  const activePrompt = useGameStore((state) => state.activePrompt);
+  const activeInscription = useGameStore((state) => state.activeInscription);
+  const activeOverlay = useGameStore((state) => state.activeOverlay);
+
+  if (
+    inputMode !== 'keyboard' ||
+    !activePrompt ||
+    activeInscription ||
+    activeOverlay !== 'none'
+  ) {
+    return null;
+  }
+
+  const promptText =
+    activePrompt.requiresPrefix === false
+      ? activePrompt.label
+      : getInteractLabel('keyboard', activePrompt.label);
+
+  return (
+    <div
+      className="stone-panel rounded border-[#e0b86b]/60 px-4 py-2 text-sm font-semibold text-[#fbe6ba]"
+      data-testid="interaction-prompt"
+    >
+      {promptText}
+    </div>
+  );
+});
+
 export function GameHud() {
   const screen = useGameStore((state) => state.screen);
   const activeLevel = useGameStore((state) => state.activeLevel);
-  const activeOverlay = useGameStore((state) => state.activeOverlay);
   const crystals = useGameStore((state) => state.crystals);
   const totalCrystals = useGameStore((state) => state.totalCrystals);
   const objectiveText = useGameStore((state) => state.objectiveText);
-  const activePrompt = useGameStore((state) => state.activePrompt);
-  const activeInscription = useGameStore((state) => state.activeInscription);
   const toasts = useGameStore((state) => state.toasts);
   const dismissToast = useGameStore((state) => state.dismissToast);
   const inventoryItems = useGameStore((state) => state.inventoryItems);
@@ -335,7 +364,7 @@ export function GameHud() {
       {/* Typewriter Story / Inscription Dialogue Box */}
       <DialogueBox />
 
-      {/* Bottom Prompts, Toasts & Controls Hint */}
+      {/* Bottom Prompts & Toasts */}
       <div className="flex flex-col items-center gap-2">
         {toasts.length > 0 && (
           <div className="flex flex-col items-center gap-1.5">
@@ -351,14 +380,7 @@ export function GameHud() {
           </div>
         )}
 
-        {activePrompt && !activeInscription && activeOverlay === 'none' && (
-          <div
-            className="stone-panel rounded border-[#e0b86b]/60 px-4 py-2 text-sm font-semibold text-[#fbe6ba]"
-            data-testid="interaction-prompt"
-          >
-            {activePrompt.label}
-          </div>
-        )}
+        <InteractionPromptBanner />
 
         {streamingPending && (
           <div
@@ -368,14 +390,11 @@ export function GameHud() {
             Streaming area...
           </div>
         )}
-
-        <p className="hidden rounded border border-[#c79d52]/25 bg-[#121719]/80 px-3 py-1 text-[11px] text-[#cfc3aa] sm:block">
-          WASD Move · Shift Sprint · Space Jump · E Interact · I Satchel · J Quests · F3/F4/F5 Debug · Esc Pause
-        </p>
       </div>
 
-          {/* Touch-only bottom-left virtual movement thumbstick */}
+          {/* Touch-only bottom-left joystick & bottom-right Interact medallion */}
           <VirtualJoystick />
+          <TouchInteractButton />
         </div>
       )}
     </>

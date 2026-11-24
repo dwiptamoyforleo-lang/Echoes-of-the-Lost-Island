@@ -29,6 +29,7 @@ import {
 } from '@/src/game/physics';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
+import { consumeInteractAnimationTrigger } from '@/src/systems/interaction';
 import {
   ExplorerModel,
   createExplorerAnimState,
@@ -69,7 +70,6 @@ export function PlayerController({
     sprint: false,
     jumpHeld: false,
     jumpJustPressed: false,
-    interactJustPressed: false,
   });
   const moveDirRef = useRef<Vec2XZ>({ x: 0, z: 0 });
   const horizVelRef = useRef<Vec2XZ>({ x: 0, z: 0 });
@@ -218,13 +218,7 @@ export function PlayerController({
       return;
     }
 
-    if (input.interactJustPressed) {
-      eventBus.emit('player:interact');
-      const p = playerTelemetry.position;
-      console.info(
-        `[Interact] Explorer interacted at (${p.x.toFixed(2)}, ${p.y.toFixed(2)}, ${p.z.toFixed(2)})`,
-      );
-    }
+    const interactTriggered = consumeInteractAnimationTrigger();
 
     const moveDir = computeCameraRelativeMoveDir(
       input.forward,
@@ -361,7 +355,7 @@ export function PlayerController({
         vert.vy,
         vert.grounded,
         vert.justJumped,
-        input.interactJustPressed,
+        interactTriggered,
         dt,
       );
     }

@@ -1,5 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { useGameStore } from '@/src/state/gameStore';
+import { triggerInteract } from '@/src/systems/interaction';
 
 export interface PlayerInputState {
   forward: number;
@@ -7,7 +8,6 @@ export interface PlayerInputState {
   sprint: boolean;
   jumpHeld: boolean;
   jumpJustPressed: boolean;
-  interactJustPressed: boolean;
 }
 
 export interface MoveAxis {
@@ -62,13 +62,11 @@ const _combinedAxis: MoveAxis = { forward: 0, right: 0 };
 export function usePlayerInput() {
   const heldRef = useRef<Set<string>>(new Set());
   const jumpQueuedRef = useRef(false);
-  const interactQueuedRef = useRef(false);
 
   useEffect(() => {
     const clearInputs = () => {
       heldRef.current.clear();
       jumpQueuedRef.current = false;
-      interactQueuedRef.current = false;
       resetVirtualJoystickMove();
     };
 
@@ -183,7 +181,7 @@ export function usePlayerInput() {
           state.closeInscription();
           return;
         }
-        interactQueuedRef.current = true;
+        triggerInteract();
       }
 
       if (code === 'Space') {
@@ -261,10 +259,8 @@ export function usePlayerInput() {
     out.sprint = held.has('ShiftLeft') || held.has('ShiftRight');
     out.jumpHeld = held.has('Space');
     out.jumpJustPressed = jumpQueuedRef.current;
-    out.interactJustPressed = interactQueuedRef.current;
 
     jumpQueuedRef.current = false;
-    interactQueuedRef.current = false;
     return out;
   };
 

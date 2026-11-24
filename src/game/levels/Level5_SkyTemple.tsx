@@ -295,10 +295,11 @@ function FourFragmentSanctumGate({
     );
   };
 
+  const gateActionable = wingsReady && fragCheck.unlocked;
   const promptText = !wingsReady
     ? 'Harmonize West & East Wings to power this Gate'
     : fragCheck.unlocked
-      ? 'Press E to Unseal Sanctum Gate (4/4 Fragments Ready)'
+      ? 'Unseal Sanctum Gate (4/4 Fragments Ready)'
       : `Locked — Requires all 4 Echoes (${fragCheck.haveCount}/4 recovered, ${4 - fragCheck.haveCount} missing)`;
 
   return (
@@ -314,6 +315,8 @@ function FourFragmentSanctumGate({
         <Interactable
           id="l5-sanctum-gate-control"
           prompt={promptText}
+          actionLabel={gateActionable ? 'Unseal' : 'Inspect'}
+          informationalOnly={!gateActionable}
           position={[0, 5.8, -20.0]}
           radius={3.0}
           onInteract={handleInteract}
@@ -358,8 +361,10 @@ function FragmentPedestal({
         prompt={
           placed
             ? `${name} Placed`
-            : `Press E to Place ${name}`
+            : `Place ${name}`
         }
+        actionLabel={placed ? 'Placed' : 'Place'}
+        informationalOnly={placed}
         radius={2.3}
         disabled={placed}
         onInteract={() => onPlace(id, fragmentId, name)}

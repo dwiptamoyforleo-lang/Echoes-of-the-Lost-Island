@@ -1,4 +1,8 @@
-export { Interactable, type InteractableProps } from './Interactable';
+export {
+  Interactable,
+  triggerInteract,
+  type InteractableProps,
+} from './Interactable';
 export {
   Crystal,
   CrystalField,

@@ -12,5 +12,6 @@ export { StartScreen } from './StartScreen';
 export { StatusOverlay } from './StatusOverlay';
 export { StorySequenceScreen } from './StorySequenceScreen';
 export { SystemsDebugPanel } from './SystemsDebugPanel';
+export { TouchInteractButton } from './TouchInteractButton';
 export { VirtualJoystick } from './VirtualJoystick';
 export { WorldMapScreen } from './WorldMapScreen';

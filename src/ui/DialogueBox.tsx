@@ -1,8 +1,10 @@
 import { useEffect, useState } from 'react';
 import { useGameStore } from '@/src/state/gameStore';
+import { getDialogueCloseHint, useInputMode } from '@/src/systems/inputMode';
 import { RuneCorner, RuneDivider } from './RuneOrnaments';
 
 export function DialogueBox() {
+  const inputMode = useInputMode();
   const activeInscription = useGameStore((s) => s.activeInscription);
   const closeInscription = useGameStore((s) => s.closeInscription);
 
@@ -73,9 +75,7 @@ export function DialogueBox() {
 
         <div className="mt-4 flex items-center justify-between gap-3">
           <span className="text-[11px] text-[#6d532c]">
-            {finished
-              ? 'Press E or Esc to close'
-              : 'Click text to reveal all'}
+            {getDialogueCloseHint(inputMode, finished)}
           </span>
           <button
             type="button"

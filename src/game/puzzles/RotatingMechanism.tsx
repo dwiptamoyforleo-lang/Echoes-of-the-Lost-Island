@@ -84,8 +84,10 @@ export function RotatingMechanism({
         prompt={
           locked
             ? `${label} Locked (${COMPASS_LABELS[currentStep]})`
-            : `Press E to Rotate ${label} (Facing ${COMPASS_LABELS[currentStep]})`
+            : `Rotate ${label} (Facing ${COMPASS_LABELS[currentStep]})`
         }
+        actionLabel={locked ? 'Locked' : 'Rotate'}
+        informationalOnly={locked}
         radius={2.4}
         disabled={locked}
         onInteract={handleRotate}

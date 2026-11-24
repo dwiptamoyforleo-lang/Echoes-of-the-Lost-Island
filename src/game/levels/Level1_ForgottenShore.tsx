@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useMemo } from 'react';
 import {
   Chest,
   CrystalField,
@@ -16,6 +16,7 @@ import {
 } from '@/src/game/puzzles';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
+import { getInputMode, getTutorialInteractToast } from '@/src/systems/inputMode';
 import { ChunkManager } from './ChunkManager';
 import {
   Level1EastCoveStructures,
@@ -38,13 +39,6 @@ const CHUNK_SPECS = LEVEL_CHUNKS.level1;
 
 export function Level1_ForgottenShore() {
   const chunks = useMemo(() => CHUNK_SPECS.map((s) => s.chunk), []);
-
-  useEffect(() => {
-    const store = useGameStore.getState();
-    if (store.screen === 'playing' && store.levelElapsedSeconds < 2 && store.crystals === 0) {
-      store.showToast('Use WASD to move · Space to jump · Shift to sprint');
-    }
-  }, []);
 
   const handleDeepWaterRespawn = useCallback(() => {
     const store = useGameStore.getState();
@@ -81,7 +75,7 @@ export function Level1_ForgottenShore() {
               onEnter={() => {
                 useGameStore
                   .getState()
-                  .showToast('Press E near ancient stones, levers, and chests to interact');
+                  .showToast(getTutorialInteractToast(getInputMode()));
               }}
             />
           </>

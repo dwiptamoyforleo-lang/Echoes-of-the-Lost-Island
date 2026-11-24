@@ -54,9 +54,13 @@ export function Switch({
           active
             ? oneShot
               ? `${label} Active`
-              : `Press E to Deactivate ${label}`
-            : `Press E to Activate ${label}`
+              : `Deactivate ${label}`
+            : `Activate ${label}`
         }
+        actionLabel={
+          active ? (oneShot ? 'Active' : 'Deactivate') : 'Activate'
+        }
+        informationalOnly={oneShot && active}
         radius={2.3}
         disabled={oneShot && active}
         onInteract={handleToggle}

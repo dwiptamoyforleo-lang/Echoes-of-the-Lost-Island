@@ -485,8 +485,10 @@ function IceMirrorPedestal({
         prompt={
           locked
             ? `${label} Locked (Facing ${COMPASS_LABELS[currentStep]})`
-            : `Press E to Rotate ${label} (Aiming ${COMPASS_LABELS[currentStep]})`
+            : `Rotate ${label} (Aiming ${COMPASS_LABELS[currentStep]})`
         }
+        actionLabel={locked ? 'Locked' : 'Rotate'}
+        informationalOnly={locked}
         radius={2.5}
         disabled={locked}
         onInteract={handleRotate}

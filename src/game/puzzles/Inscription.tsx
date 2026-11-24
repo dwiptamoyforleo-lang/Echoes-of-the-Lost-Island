@@ -26,7 +26,8 @@ export function Inscription({
     <group position={position} rotation={[0, rotationY, 0]}>
       <Interactable
         id={id}
-        prompt="Press E to Read Inscription"
+        prompt="Read Inscription"
+        actionLabel="Read"
         radius={2.3}
         onInteract={handleRead}
       >

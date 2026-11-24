@@ -58,7 +58,8 @@ export function Chest({
     <group position={position} rotation={[0, rotationY, 0]}>
       <Interactable
         id={id}
-        prompt={`Press E to Open Chest`}
+        prompt="Open Chest"
+        actionLabel="Open"
         radius={2.2}
         disabled={opened}
         onInteract={handleOpen}

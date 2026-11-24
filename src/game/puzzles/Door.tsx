@@ -124,9 +124,11 @@ export function Door({
             id={`door-lock-${id}`}
             prompt={
               hasKeyInBag
-                ? `Press E to Unlock (${keyLabel})`
+                ? `Unlock (${keyLabel})`
                 : `Locked — Needs ${keyLabel}`
             }
+            actionLabel={hasKeyInBag ? 'Unlock' : 'Inspect'}
+            informationalOnly={!hasKeyInBag}
             position={[0, 1.2, 0]}
             radius={2.6}
             onInteract={handleKeyInteract}

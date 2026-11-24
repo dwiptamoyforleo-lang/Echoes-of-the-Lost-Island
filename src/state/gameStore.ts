@@ -68,6 +68,8 @@ export type ActiveLevelId = LevelId | 'testArena';
 export interface ActivePrompt {
   id: string;
   label: string;
+  actionLabel?: string;
+  requiresPrefix?: boolean;
 }
 
 export interface InscriptionData {
@@ -1293,7 +1295,18 @@ export const useGameStore = create<GameState>((set, get) => {
       }
     },
 
-    setActivePrompt: (prompt) => set({ activePrompt: prompt }),
+    setActivePrompt: (prompt) =>
+      set((state) => {
+        if (
+          state.activePrompt?.id === prompt?.id &&
+          state.activePrompt?.label === prompt?.label &&
+          state.activePrompt?.actionLabel === prompt?.actionLabel &&
+          state.activePrompt?.requiresPrefix === prompt?.requiresPrefix
+        ) {
+          return state;
+        }
+        return { activePrompt: prompt };
+      }),
 
     clearActivePromptIfId: (id) =>
       set((state) =>
