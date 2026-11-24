@@ -1,4 +1,5 @@
 import { useGameStore } from '@/src/state/gameStore';
+import { GAME_TITLE } from '@/src/config/gameInfo';
 import { AmbientDust, RuneCorner, RuneDivider } from './RuneOrnaments';
 
 const CREDIT_SECTIONS = [
@@ -47,7 +48,7 @@ export function CreditsScreen() {
             Expedition Chronicle
           </p>
           <h2 className="font-display mt-1 text-2xl font-bold tracking-wide text-[#f7ebd2]">
-            Echoes of the Lost Island
+            {GAME_TITLE}
           </h2>
           <p className="mt-1 text-xs text-[#b8aa8e]">
             Built fully in-browser with procedural geometry and zero external asset dependencies
