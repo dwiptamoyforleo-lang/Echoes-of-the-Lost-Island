@@ -143,7 +143,7 @@ export class AppErrorBoundary extends Component<
               color: '#c79d52',
             }}
           >
-            {errorSource ?? 'Expedition Interrupted'}
+            {GAME_TITLE} · {errorSource ?? 'Expedition Interrupted'}
           </p>
           <h2
             style={{
