@@ -88,7 +88,7 @@ function IceBridgeSegment({
     if (phase !== 'intact' || !isPlayerPayload(payload)) return;
     timerRef.current = 0;
     setPhase('cracking');
-    playPooledSynth('switch');
+    playPooledSynth('mechanism');
   };
 
   return (

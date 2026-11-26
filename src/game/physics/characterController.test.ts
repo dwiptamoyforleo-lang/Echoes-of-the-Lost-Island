@@ -4,6 +4,8 @@ import {
   approachHorizontalVelocity,
   computeCameraRelativeMoveDir,
   dampAngle,
+  DEFAULT_HORIZONTAL_CONFIG,
+  resolveTargetMoveSpeed,
   shortestAngleDelta,
   stepStamina,
   stepVerticalKinematics,
@@ -125,4 +127,22 @@ test('stepStamina drains when sprinting, locks out when exhausted, and recovers 
   stepStamina(stamina, false, false, 1.0);
   assert.equal(stamina.exhausted, false);
   assert.ok(stamina.value >= 22);
+});
+
+test('resolveTargetMoveSpeed maps joystick tilt from walk to run while preserving keyboard speeds', () => {
+  const walk = DEFAULT_HORIZONTAL_CONFIG.walkSpeed;
+  const sprint = DEFAULT_HORIZONTAL_CONFIG.sprintSpeed;
+
+  assert.equal(resolveTargetMoveSpeed(0, true, false), 0);
+  assert.equal(resolveTargetMoveSpeed(1, false, false), walk);
+  assert.equal(resolveTargetMoveSpeed(1, false, true), sprint);
+
+  const gentleTilt = resolveTargetMoveSpeed(0.3, true, false);
+  const midTilt = resolveTargetMoveSpeed(0.62, true, false);
+  const fullTilt = resolveTargetMoveSpeed(1.0, true, false);
+
+  assert.ok(gentleTilt > 0 && gentleTilt < midTilt);
+  assert.ok(midTilt < walk);
+  assert.ok(fullTilt > walk && fullTilt < sprint);
+  assert.equal(resolveTargetMoveSpeed(0.4, true, true), sprint);
 });

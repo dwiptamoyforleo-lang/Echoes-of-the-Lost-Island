@@ -17,6 +17,7 @@ export interface ChunkEvalInput {
   nowMs: number;
   lastHeavyOpMs: number;
   heavyOpCooldownMs?: number;
+  rangeScale?: number;
 }
 
 export interface ChunkEvalResult {
@@ -35,6 +36,7 @@ export function evaluateChunkStreaming(input: ChunkEvalInput): ChunkEvalResult {
     nowMs,
     lastHeavyOpMs,
     heavyOpCooldownMs = 90,
+    rangeScale = 1.0,
   } = input;
 
   if (chunks.length === 0) {
@@ -91,16 +93,18 @@ export function evaluateChunkStreaming(input: ChunkEvalInput): ChunkEvalResult {
   for (const m of metrics) {
     const isLoaded = loadedSet.has(m.chunk.id);
     const isPinned = m.chunk.id === currentChunkId;
+    const effectiveLoadRadius = m.chunk.loadRadius * rangeScale;
+    const effectiveUnloadRadius = m.chunk.unloadRadius * rangeScale;
 
     if (!isLoaded) {
-      if (isPinned || m.dist <= m.chunk.loadRadius) {
+      if (isPinned || m.dist <= effectiveLoadRadius) {
         desiredToLoad.push({
           id: m.chunk.id,
           heavy: Boolean(m.chunk.heavy),
           priority: isPinned ? 1e6 : m.priority,
         });
       }
-    } else if (!isPinned && m.dist > m.chunk.unloadRadius) {
+    } else if (!isPinned && m.dist > effectiveUnloadRadius) {
       desiredToUnload.push({
         id: m.chunk.id,
         heavy: Boolean(m.chunk.heavy),

@@ -15,11 +15,13 @@
     margin: 0;
     padding: 0;
     overflow: hidden;
+    overscroll-behavior: none;
     background-color: #12181a;
     font-family: var(--font-body);
     color: #efe5cf;
   }
 
+  html[data-state='playing'],
   body[data-state='playing'] {
     touch-action: none;
     overscroll-behavior: none;

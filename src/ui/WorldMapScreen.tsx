@@ -46,18 +46,24 @@ export function WorldMapScreen() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-20 flex items-center justify-center p-3 sm:p-6"
-      style={{ backgroundColor: 'rgba(10, 16, 18, 0.72)' }}
+      className="pointer-events-auto fixed inset-0 z-20 flex items-center justify-center p-2.5 sm:p-6"
+      style={{
+        backgroundColor: 'rgba(10, 16, 18, 0.72)',
+        paddingTop: 'max(0.625rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom, 0px))',
+        paddingLeft: 'max(0.625rem, env(safe-area-inset-left, 0px))',
+        paddingRight: 'max(0.625rem, env(safe-area-inset-right, 0px))',
+      }}
       data-testid="world-map-screen"
     >
-      <div className="stone-panel animate-panel-in relative flex max-h-[92vh] w-full max-w-5xl flex-col overflow-hidden rounded-md p-4 sm:p-6">
+      <div className="stone-panel animate-panel-in relative flex max-h-[94dvh] w-full max-w-5xl flex-col overflow-hidden rounded-md p-3.5 sm:p-6">
         <RuneCorner className="pointer-events-none absolute top-1.5 left-1.5" />
         <RuneCorner className="pointer-events-none absolute top-1.5 right-1.5 rotate-90" />
 
-        <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-[#c79d52]/30 pb-3">
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2.5 border-b border-[#c79d52]/30 pb-2.5 sm:mb-4 sm:gap-3 sm:pb-3">
           <div>
-            <div className="flex flex-wrap items-center gap-2.5">
-              <h2 className="font-display text-xl font-bold tracking-wide text-[#f7ebd2] sm:text-2xl">
+            <div className="flex flex-wrap items-center gap-2">
+              <h2 className="font-display text-lg font-bold tracking-wide text-[#f7ebd2] sm:text-2xl">
                 Chart of the Lost Archipelago
               </h2>
               {gameCompleted && (
@@ -69,7 +75,7 @@ export function WorldMapScreen() {
                 </span>
               )}
             </div>
-            <p className="text-xs text-[#bfb195]">
+            <p className="text-[11px] text-[#bfb195] sm:text-xs">
               Select an unlocked region to embark on an expedition
             </p>
           </div>
@@ -80,18 +86,18 @@ export function WorldMapScreen() {
               e.currentTarget.blur();
               setScreen('mainMenu');
             }}
-            className="stone-btn rounded px-4 py-2 text-xs font-semibold"
+            className="stone-btn min-h-[42px] rounded px-4 py-2 text-xs font-semibold"
           >
             Back to Menu
           </button>
         </div>
 
-        <div className="grid min-h-0 flex-1 grid-cols-1 gap-4 overflow-y-auto lg:grid-cols-[1.55fr_1fr]">
+        <div className="grid min-h-0 flex-1 grid-cols-1 gap-3 overflow-y-auto sm:gap-4 lg:grid-cols-[1.55fr_1fr]">
           {/* Illustrated Parchment SVG Map */}
           <div className="parchment-panel relative flex items-center justify-center overflow-hidden rounded p-2 sm:p-3">
             <svg
               viewBox="0 0 780 470"
-              className="h-auto w-full select-none"
+              className="max-h-[38dvh] w-full lg:max-h-none select-none"
               role="img"
               aria-label="Illustrated Archipelago Map"
             >
@@ -375,8 +381,8 @@ export function WorldMapScreen() {
                 }}
                 className={
                   selectedProg.unlocked
-                    ? 'bronze-btn w-full rounded px-4 py-3 text-sm font-semibold'
-                    : 'stone-btn w-full rounded px-4 py-3 text-xs font-semibold opacity-60'
+                    ? 'bronze-btn min-h-[44px] w-full rounded px-4 py-3 text-sm font-semibold'
+                    : 'stone-btn min-h-[44px] w-full rounded px-4 py-3 text-xs font-semibold opacity-60'
                 }
               >
                 {!selectedProg.unlocked
@@ -400,7 +406,7 @@ export function WorldMapScreen() {
                       key={lvl.id}
                       type="button"
                       onClick={() => setSelectedId(lvl.id)}
-                      className={`rounded px-2.5 py-1 text-[11px] font-medium transition-colors ${
+                      className={`min-h-[38px] rounded px-2.5 py-1.5 text-[11px] font-medium transition-colors ${
                         selectedId === lvl.id
                           ? 'bg-[#256f68] text-white'
                           : 'bg-[#22292b] text-[#cfc3aa] hover:text-white'

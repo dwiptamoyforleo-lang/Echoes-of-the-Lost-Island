@@ -1,6 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { combineMoveInputs } from './usePlayerInput';
+import {
+  combineMoveInputs,
+  resetVirtualTouchButtons,
+  setVirtualSprint,
+  toggleVirtualSprint,
+  useVirtualTouchStore,
+} from './usePlayerInput';
 
 test('combineMoveInputs normalizes diagonal keyboard vectors to magnitude <= 1', () => {
   const res = combineMoveInputs(1, 1, 0, 0);
@@ -20,4 +26,20 @@ test('combineMoveInputs clamps combined keyboard and joystick inputs to unit cir
   const mag = Math.hypot(res.forward, res.right);
   assert.ok(mag <= 1 + 1e-6);
   assert.ok(res.forward > 0 && res.right > 0);
+});
+
+test('virtual touch sprint toggle and reset update Zustand touch store cleanly', () => {
+  resetVirtualTouchButtons();
+  assert.equal(useVirtualTouchStore.getState().sprintToggle, false);
+
+  const toggledOn = toggleVirtualSprint();
+  assert.equal(toggledOn, true);
+  assert.equal(useVirtualTouchStore.getState().sprintToggle, true);
+
+  setVirtualSprint(false);
+  assert.equal(useVirtualTouchStore.getState().sprintToggle, false);
+
+  toggleVirtualSprint();
+  resetVirtualTouchButtons();
+  assert.equal(useVirtualTouchStore.getState().sprintToggle, false);
 });

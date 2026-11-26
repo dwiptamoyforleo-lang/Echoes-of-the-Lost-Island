@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import { useGameStore } from '@/src/state/gameStore';
+import { useInputMode } from '@/src/systems/inputMode';
 import { LEVEL_CATALOG, type LevelId } from '@/src/systems/progressionSystem';
 import { RuneCorner, RuneDivider } from './RuneOrnaments';
 
 export function QuestLogScreen() {
+  const inputMode = useInputMode();
   const activeOverlay = useGameStore((s) => s.activeOverlay);
   const setActiveOverlay = useGameStore((s) => s.setActiveOverlay);
   const activeLevel = useGameStore((s) => s.activeLevel);
@@ -22,12 +24,16 @@ export function QuestLogScreen() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6"
-      style={{ backgroundColor: 'rgba(10, 16, 18, 0.78)' }}
+      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-2.5 sm:p-6"
+      style={{
+        backgroundColor: 'rgba(10, 16, 18, 0.78)',
+        paddingTop: 'max(0.625rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom, 0px))',
+      }}
       data-testid="quest-log-screen"
     >
       <div
-        className="stone-panel animate-panel-in relative flex max-h-[86vh] w-full max-w-2xl flex-col overflow-hidden rounded-md p-5 sm:p-6"
+        className="stone-panel animate-panel-in relative flex max-h-[92dvh] w-full max-w-2xl flex-col overflow-hidden rounded-md p-4 sm:p-6"
         role="dialog"
         aria-label="Quest Log"
       >
@@ -36,11 +42,13 @@ export function QuestLogScreen() {
 
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl font-bold text-[#f7ebd2]">
+            <h2 className="font-display text-lg font-bold text-[#f7ebd2] sm:text-xl">
               Expedition Quest Log
             </h2>
-            <p className="text-xs text-[#b8aa8e]">
-              Main and optional objectives · Press J or Esc to close
+            <p className="text-[11px] text-[#b8aa8e] sm:text-xs">
+              {inputMode === 'touch'
+                ? 'Main and optional region objectives'
+                : 'Main and optional objectives · Press J or Esc to close'}
             </p>
           </div>
           <button
@@ -49,13 +57,13 @@ export function QuestLogScreen() {
               e.currentTarget.blur();
               setActiveOverlay('none');
             }}
-            className="stone-btn rounded px-3.5 py-1.5 text-xs font-semibold"
+            className="stone-btn min-h-[42px] shrink-0 rounded px-3.5 py-1.5 text-xs font-semibold"
           >
             Close
           </button>
         </div>
 
-        <div className="mb-4 flex flex-wrap gap-1.5 border-b border-[#c79d52]/25 pb-3">
+        <div className="mb-3 flex flex-nowrap gap-1.5 overflow-x-auto border-b border-[#c79d52]/25 pb-2.5 sm:mb-4 sm:flex-wrap sm:pb-3">
           {LEVEL_CATALOG.map((meta) => {
             const unlocked = progression[meta.id]?.unlocked;
             return (
@@ -64,7 +72,7 @@ export function QuestLogScreen() {
                 type="button"
                 disabled={!unlocked}
                 onClick={() => setSelectedLevel(meta.id)}
-                className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
+                className={`min-h-[38px] shrink-0 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
                   selectedLevel === meta.id
                     ? 'bronze-btn'
                     : 'stone-btn disabled:opacity-40'

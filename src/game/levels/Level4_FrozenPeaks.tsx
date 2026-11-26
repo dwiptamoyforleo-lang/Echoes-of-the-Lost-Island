@@ -162,7 +162,7 @@ function AuroraSkyCurtains() {
  */
 function SnowfallParticles() {
   const activeTier = useGameStore((s) => s.activeQualityTier);
-  const count = activeTier === 'high' ? 650 : activeTier === 'medium' ? 420 : 220;
+  const count = activeTier === 'high' ? 650 : activeTier === 'medium' ? 380 : 160;
 
   const { geometry, material } = useMemo(() => {
     const rng = createSeededRng(4041);

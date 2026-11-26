@@ -55,19 +55,35 @@ export function RenderPerformanceController() {
     const profile = profileRef.current;
     const initialTier = resolveInitialTier(qualityPreference, profile);
     monitorRef.current.syncPreset(initialTier, profile);
+    const preset = getQualityPreset(initialTier, profile);
     useGameStore.getState().setActiveQualityTier(initialTier);
     performanceTelemetry.gpuRenderer = profile.gpuRenderer;
     performanceTelemetry.activeTier = initialTier;
-  }, [qualityPreference]);
 
-  // Lightweight optional post-processing strictly on High / desktop Bloom, cleanly disposed when off
+    if (!profile.isSoftwareGl) {
+      lastDprRef.current = preset.maxDpr;
+      setDpr(preset.maxDpr);
+    }
+  }, [qualityPreference, setDpr]);
+
+  // Sync shadow map state, camera far clip, and optional post-processing per quality tier
   useEffect(() => {
     const profile = profileRef.current;
     const preset = getQualityPreset(activeTier, profile);
+
+    gl.shadowMap.enabled = !profile.isSoftwareGl && preset.shadowsEnabled;
+    gl.shadowMap.needsUpdate = true;
+
+    if ((camera as THREE.PerspectiveCamera).isPerspectiveCamera) {
+      const persp = camera as THREE.PerspectiveCamera;
+      if (persp.far !== preset.cameraFar) {
+        persp.far = preset.cameraFar;
+        persp.updateProjectionMatrix();
+      }
+    }
+
     const shouldUseComposer =
-      !profile.isSoftwareGl &&
-      !profile.isMobile &&
-      preset.postProcessing === 'full';
+      !profile.isSoftwareGl && preset.postProcessing !== 'off';
 
     if (!shouldUseComposer) {
       if (composerRef.current) {
@@ -79,19 +95,29 @@ export function RenderPerformanceController() {
       return;
     }
 
+    const isMediumBloom = preset.postProcessing === 'bloom';
+    const bloomRes = isMediumBloom
+      ? new THREE.Vector2(
+          Math.max(1, Math.floor(size.width * 0.5)),
+          Math.max(1, Math.floor(size.height * 0.5)),
+        )
+      : new THREE.Vector2(size.width, size.height);
+
     const composer = new EffectComposer(gl);
     const renderPass = new RenderPass(scene, camera);
     const bloomPass = new UnrealBloomPass(
-      new THREE.Vector2(size.width, size.height),
-      0.24,
-      0.35,
-      0.88,
+      bloomRes,
+      isMediumBloom ? 0.16 : 0.26,
+      isMediumBloom ? 0.25 : 0.36,
+      isMediumBloom ? 0.9 : 0.86,
     );
     const outputPass = new OutputPass();
 
     composer.addPass(renderPass);
     composer.addPass(bloomPass);
     composer.addPass(outputPass);
+    const targetDpr = monitorRef.current.getState().dpr;
+    composer.setPixelRatio(targetDpr);
 
     composerRef.current = composer;
     bloomPassRef.current = bloomPass;
@@ -111,11 +137,16 @@ export function RenderPerformanceController() {
   useEffect(() => {
     const composer = composerRef.current;
     if (!composer) return;
+    const preset = getQualityPreset(activeTier, profileRef.current);
     composer.setSize(size.width, size.height);
     if (bloomPassRef.current) {
-      bloomPassRef.current.resolution.set(size.width, size.height);
+      const scale = preset.postProcessing === 'bloom' ? 0.5 : 1;
+      bloomPassRef.current.resolution.set(
+        Math.max(1, Math.floor(size.width * scale)),
+        Math.max(1, Math.floor(size.height * scale)),
+      );
     }
-  }, [size.width, size.height, composerReady]);
+  }, [size.width, size.height, composerReady, activeTier]);
 
   useFrame((_, rawDt) => {
     const profile = profileRef.current;

@@ -1,9 +1,10 @@
-import { useMemo, useRef } from 'react';
+import { useEffect, useMemo, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
 import * as THREE from 'three';
 import { Interactable } from '@/src/game/collectibles';
 import { useGameStore } from '@/src/state/gameStore';
+import { playPooledSynth } from '@/src/systems/audioSystem';
 
 export interface CrackedIceWallProps {
   id: string;
@@ -32,6 +33,14 @@ export function CrackedIceWall({
 
   const shardsRef = useRef<THREE.Group>(null);
   const collapseRef = useRef(shattered ? 1 : 0);
+  const prevShatteredRef = useRef(shattered);
+
+  useEffect(() => {
+    if (shattered && !prevShatteredRef.current) {
+      playPooledSynth('mechanism');
+    }
+    prevShatteredRef.current = shattered;
+  }, [shattered]);
 
   useFrame((_, rawDt) => {
     const dt = Math.min(rawDt, 0.05);

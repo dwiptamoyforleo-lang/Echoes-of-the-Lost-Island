@@ -99,6 +99,34 @@ export function computeCameraRelativeMoveDir(
 }
 
 /**
+ * Maps analog joystick tilt magnitude (0..1) smoothly from slow walk to run speed,
+ * while preserving exact walk/sprint speeds for digital keyboard input or active sprint.
+ */
+export function resolveTargetMoveSpeed(
+  magnitude: number,
+  fromJoystick: boolean,
+  sprinting: boolean,
+  config: HorizontalMoveConfig = DEFAULT_HORIZONTAL_CONFIG,
+): number {
+  const clampedMag = Math.max(0, Math.min(1, magnitude));
+  if (clampedMag <= 1e-4) {
+    return 0;
+  }
+  if (sprinting) {
+    return config.sprintSpeed;
+  }
+  if (!fromJoystick) {
+    return config.walkSpeed;
+  }
+  if (clampedMag <= 0.62) {
+    const t = clampedMag / 0.62;
+    return config.walkSpeed * (0.4 + 0.5 * t);
+  }
+  const t = (clampedMag - 0.62) / 0.38;
+  return Math.min(config.sprintSpeed, config.walkSpeed * (0.9 + 0.42 * t));
+}
+
+/**
  * Smoothly accelerates or decelerates horizontal velocity toward the target vector.
  */
 export function approachHorizontalVelocity(
@@ -108,9 +136,11 @@ export function approachHorizontalVelocity(
   grounded: boolean,
   dt: number,
   config: HorizontalMoveConfig = DEFAULT_HORIZONTAL_CONFIG,
+  targetSpeedOverride?: number,
 ): Vec2XZ {
   const hasInput = moveDir.x * moveDir.x + moveDir.z * moveDir.z > 1e-6;
-  const maxSpeed = sprinting ? config.sprintSpeed : config.walkSpeed;
+  const maxSpeed =
+    targetSpeedOverride ?? (sprinting ? config.sprintSpeed : config.walkSpeed);
   const targetX = hasInput ? moveDir.x * maxSpeed : 0;
   const targetZ = hasInput ? moveDir.z * maxSpeed : 0;
 

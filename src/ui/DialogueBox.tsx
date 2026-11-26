@@ -43,37 +43,40 @@ export function DialogueBox() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-x-0 bottom-14 z-30 flex justify-center px-4"
+      className="pointer-events-auto fixed inset-x-0 bottom-3 z-30 flex justify-center px-3 sm:bottom-10 sm:px-4"
+      style={{
+        paddingBottom: 'env(safe-area-inset-bottom, 0px)',
+      }}
       data-testid="dialogue-box"
     >
       <div
-        className="parchment-panel animate-panel-in relative w-full max-w-2xl rounded-md px-6 py-5 shadow-2xl sm:px-8 sm:py-6"
+        className="parchment-panel animate-panel-in relative max-h-[75dvh] w-full max-w-2xl overflow-y-auto rounded-md px-4 py-4 shadow-2xl sm:px-8 sm:py-6"
         role="dialog"
         aria-label={activeInscription.title}
         onClick={handleBoxAction}
       >
-        <RuneCorner className="absolute top-1.5 left-1.5 text-[#7c5d2c]" />
-        <RuneCorner className="absolute top-1.5 right-1.5 rotate-90 text-[#7c5d2c]" />
+        <RuneCorner className="pointer-events-none absolute top-1.5 left-1.5 text-[#7c5d2c]" />
+        <RuneCorner className="pointer-events-none absolute top-1.5 right-1.5 rotate-90 text-[#7c5d2c]" />
 
         <div className="mb-2 flex items-center justify-between gap-4">
-          <h2 className="font-display text-base font-bold tracking-wide text-[#422f15] sm:text-lg">
+          <h2 className="font-display text-sm font-bold tracking-wide text-[#422f15] sm:text-lg">
             {activeInscription.title}
           </h2>
-          <span className="font-mono text-[11px] font-semibold text-[#75582e]">
+          <span className="font-mono text-[10px] font-semibold text-[#75582e] sm:text-[11px]">
             Ancient Stone Lore
           </span>
         </div>
 
-        <RuneDivider className="mb-3" />
+        <RuneDivider className="mb-2.5 sm:mb-3" />
 
-        <p className="min-h-[4.2rem] text-sm leading-relaxed text-[#2d2112]">
+        <p className="min-h-[3.5rem] text-xs leading-relaxed text-[#2d2112] sm:min-h-[4.2rem] sm:text-sm">
           {body.slice(0, visibleChars)}
           {!finished && (
             <span className="ml-0.5 inline-block h-4 w-1.5 bg-[#174c47] align-middle" />
           )}
         </p>
 
-        <div className="mt-4 flex items-center justify-between gap-3">
+        <div className="mt-3 flex items-center justify-between gap-3 sm:mt-4">
           <span className="text-[11px] text-[#6d532c]">
             {getDialogueCloseHint(inputMode, finished)}
           </span>
@@ -84,7 +87,7 @@ export function DialogueBox() {
               e.currentTarget.blur();
               handleBoxAction();
             }}
-            className="bronze-btn rounded px-4 py-1.5 text-xs font-semibold"
+            className="bronze-btn min-h-[42px] rounded px-4 py-1.5 text-xs font-semibold"
           >
             {finished ? 'Close' : 'Reveal'}
           </button>

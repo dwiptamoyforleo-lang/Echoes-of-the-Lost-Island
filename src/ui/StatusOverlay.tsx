@@ -1,9 +1,11 @@
 import { useGameStore } from '@/src/state/gameStore';
 import { ANCIENT_FRAGMENTS } from '@/src/systems/inventorySystem';
+import { useInputMode } from '@/src/systems/inputMode';
 import { getLevelMetadata, type LevelId } from '@/src/systems/progressionSystem';
 import { FragmentEmblem, RuneCorner, RuneDivider } from './RuneOrnaments';
 
 export function StatusOverlay() {
+  const inputMode = useInputMode();
   const screen = useGameStore((state) => state.screen);
   const activeLevel = useGameStore((state) => state.activeLevel);
   const crystals = useGameStore((state) => state.crystals);
@@ -41,12 +43,16 @@ export function StatusOverlay() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-20 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(10, 16, 18, 0.68)' }}
+      className="pointer-events-auto fixed inset-0 z-20 flex items-center justify-center p-3 sm:p-4"
+      style={{
+        backgroundColor: 'rgba(10, 16, 18, 0.68)',
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+      }}
     >
       {screen === 'paused' && (
         <div
-          className="stone-panel animate-panel-in relative flex w-full max-w-xs flex-col items-center gap-3 rounded-md px-7 py-6 text-center"
+          className="stone-panel animate-panel-in relative flex max-h-[92dvh] w-full max-w-xs flex-col items-center gap-2.5 overflow-y-auto rounded-md px-6 py-5 text-center sm:gap-3 sm:px-7 sm:py-6"
           role="dialog"
           aria-label="Game Paused"
           data-testid="pause-menu"
@@ -58,7 +64,9 @@ export function StatusOverlay() {
             Paused
           </h2>
           <p className="text-xs text-[#b8aa8e]">
-            Press Escape to resume exploration
+            {inputMode === 'touch'
+              ? 'Tap Resume to continue exploring'
+              : 'Press Escape to resume exploration'}
           </p>
 
           <RuneDivider className="w-full" />
@@ -70,7 +78,7 @@ export function StatusOverlay() {
                 e.currentTarget.blur();
                 setScreen('playing');
               }}
-              className="bronze-btn w-full rounded px-4 py-2.5 text-xs font-semibold"
+              className="bronze-btn min-h-[44px] w-full rounded px-4 py-2.5 text-xs font-semibold"
             >
               Resume
             </button>
@@ -80,7 +88,7 @@ export function StatusOverlay() {
                 e.currentTarget.blur();
                 startLevel(activeLevel);
               }}
-              className="stone-btn w-full rounded px-4 py-2 text-xs font-semibold"
+              className="stone-btn min-h-[42px] w-full rounded px-4 py-2 text-xs font-semibold"
             >
               Restart Level
             </button>
@@ -91,7 +99,7 @@ export function StatusOverlay() {
                 e.currentTarget.blur();
                 openSettings('paused');
               }}
-              className="stone-btn w-full rounded px-4 py-2 text-xs font-semibold"
+              className="stone-btn min-h-[42px] w-full rounded px-4 py-2 text-xs font-semibold"
             >
               Settings
             </button>
@@ -102,7 +110,7 @@ export function StatusOverlay() {
                 e.currentTarget.blur();
                 saveCurrentGame(true);
               }}
-              className="stone-btn w-full rounded px-4 py-2 text-xs font-semibold text-amber-200"
+              className="stone-btn min-h-[42px] w-full rounded px-4 py-2 text-xs font-semibold text-amber-200"
             >
               Save Game
             </button>
@@ -112,7 +120,7 @@ export function StatusOverlay() {
                 e.currentTarget.blur();
                 setScreen('mainMenu');
               }}
-              className="stone-btn w-full rounded px-4 py-2 text-xs font-medium"
+              className="stone-btn min-h-[42px] w-full rounded px-4 py-2 text-xs font-medium"
             >
               Main Menu
             </button>
@@ -122,7 +130,7 @@ export function StatusOverlay() {
 
       {screen === 'levelComplete' && (
         <div
-          className="stone-panel animate-panel-in relative flex w-full max-w-md flex-col items-center gap-4 rounded-md px-7 py-7 text-center"
+          className="stone-panel animate-panel-in relative flex max-h-[92dvh] w-full max-w-md flex-col items-center gap-3 overflow-y-auto rounded-md px-5 py-5 text-center sm:gap-4 sm:px-7 sm:py-7"
           role="dialog"
           aria-label="Level Complete"
           data-testid="level-complete-screen"

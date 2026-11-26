@@ -29,15 +29,19 @@ export function CreditsScreen() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(10, 15, 18, 0.78)' }}
+      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4"
+      style={{
+        backgroundColor: 'rgba(10, 15, 18, 0.78)',
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+      }}
       data-testid="credits-screen"
       role="dialog"
       aria-label="Expedition Credits"
     >
       <AmbientDust />
 
-      <div className="stone-panel animate-panel-in relative flex max-h-[90vh] w-full max-w-xl flex-col gap-5 overflow-y-auto rounded-md px-6 py-7 sm:px-9">
+      <div className="stone-panel animate-panel-in relative flex max-h-[92dvh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-md px-5 py-5 sm:gap-5 sm:px-9 sm:py-7">
         <RuneCorner className="pointer-events-none absolute top-2 left-2" />
         <RuneCorner className="pointer-events-none absolute top-2 right-2 rotate-90" />
         <RuneCorner className="pointer-events-none absolute bottom-2 right-2 rotate-180" />
@@ -47,7 +51,7 @@ export function CreditsScreen() {
           <p className="font-mono text-[11px] tracking-widest text-[#c79d52] uppercase">
             Expedition Chronicle
           </p>
-          <h2 className="font-display mt-1 text-2xl font-bold tracking-wide text-[#f7ebd2]">
+          <h2 className="font-display mt-1 text-xl font-bold tracking-wide text-[#f7ebd2] sm:text-2xl">
             {GAME_TITLE}
           </h2>
           <p className="mt-1 text-xs text-[#b8aa8e]">
@@ -79,7 +83,7 @@ export function CreditsScreen() {
               type="button"
               data-testid="credits-watch-intro"
               onClick={() => setScreen('intro')}
-              className="stone-btn rounded px-3 py-2 text-xs font-semibold"
+              className="stone-btn min-h-[42px] rounded px-3 py-2 text-xs font-semibold"
             >
               Watch Intro
             </button>
@@ -87,7 +91,7 @@ export function CreditsScreen() {
               type="button"
               data-testid="credits-watch-ending"
               onClick={() => setScreen('ending')}
-              className="stone-btn rounded px-3 py-2 text-xs font-semibold"
+              className="stone-btn min-h-[42px] rounded px-3 py-2 text-xs font-semibold"
             >
               Watch Ending
             </button>
@@ -96,7 +100,7 @@ export function CreditsScreen() {
             type="button"
             data-testid="credits-back-btn"
             onClick={() => setScreen('mainMenu')}
-            className="bronze-btn rounded px-5 py-2 text-xs font-semibold"
+            className="bronze-btn min-h-[42px] rounded px-5 py-2 text-xs font-semibold"
           >
             Back to Menu
           </button>

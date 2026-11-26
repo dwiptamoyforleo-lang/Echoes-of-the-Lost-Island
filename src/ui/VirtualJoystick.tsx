@@ -4,13 +4,14 @@ import {
   setVirtualJoystickMove,
 } from '@/src/game/player/usePlayerInput';
 import { useGameStore } from '@/src/state/gameStore';
-import { useInputMode } from '@/src/systems/inputMode';
+import { useInputMode, useViewportLayout } from '@/src/systems/inputMode';
 
 const MAX_RADIUS_PX = 38;
 const DEADZONE = 0.12;
 
 function VirtualJoystickInner() {
   const inputMode = useInputMode();
+  const { isCompactHeight } = useViewportLayout();
   const screen = useGameStore((s) => s.screen);
   const activeOverlay = useGameStore((s) => s.activeOverlay);
   const activeInscription = useGameStore((s) => s.activeInscription);
@@ -22,6 +23,7 @@ function VirtualJoystickInner() {
     y: 0,
   });
   const [engaged, setEngaged] = useState(false);
+  const [normMagnitude, setNormMagnitude] = useState(0);
 
   const baseRef = useRef<HTMLDivElement>(null);
   const pointerIdRef = useRef<number | null>(null);
@@ -38,6 +40,7 @@ function VirtualJoystickInner() {
     if (!active) {
       pointerIdRef.current = null;
       setEngaged(false);
+      setNormMagnitude(0);
       setKnobOffset({ x: 0, y: 0 });
       resetVirtualJoystickMove();
     }
@@ -69,11 +72,13 @@ function VirtualJoystickInner() {
 
     const normDist = Math.min(1, dist / MAX_RADIUS_PX);
     if (normDist < DEADZONE) {
+      setNormMagnitude(0);
       setVirtualJoystickMove(0, 0, true);
       return;
     }
 
     const rescaled = (normDist - DEADZONE) / (1 - DEADZONE);
+    setNormMagnitude(rescaled);
     const dirX = dist > 1e-4 ? dx / Math.min(dist, MAX_RADIUS_PX) : 0;
     const dirY = dist > 1e-4 ? dy / Math.min(dist, MAX_RADIUS_PX) : 0;
     // Screen +Y is down, so forward movement is -dirY
@@ -83,14 +88,18 @@ function VirtualJoystickInner() {
   const releaseStick = () => {
     pointerIdRef.current = null;
     setEngaged(false);
+    setNormMagnitude(0);
     setKnobOffset({ x: 0, y: 0 });
     resetVirtualJoystickMove();
   };
+
+  const isRunningZone = engaged && normMagnitude >= 0.62;
 
   return (
     <div
       ref={baseRef}
       data-testid="virtual-joystick"
+      data-no-ui-sfx="true"
       aria-label="Movement Joystick"
       role="application"
       onContextMenu={(e) => e.preventDefault()}
@@ -129,23 +138,31 @@ function VirtualJoystickInner() {
           releaseStick();
         }
       }}
-      className="pointer-events-auto fixed z-20 flex h-28 w-28 touch-none items-center justify-center rounded-full border border-[#c79d52]/55 select-none"
+      className={`pointer-events-auto fixed z-20 flex touch-none items-center justify-center rounded-full border select-none transition-colors duration-150 ${
+        isCompactHeight ? 'h-24 w-24' : 'h-28 w-28'
+      } ${
+        isRunningZone
+          ? 'border-[#2dd4bf]/80'
+          : 'border-[#c79d52]/55'
+      }`}
       style={{
-        bottom: 'calc(env(safe-area-inset-bottom, 0px) + 1.5rem)',
-        left: 'calc(env(safe-area-inset-left, 0px) + 1.25rem)',
+        bottom: `calc(env(safe-area-inset-bottom, 0px) + ${isCompactHeight ? '0.85rem' : '1.35rem'})`,
+        left: 'calc(env(safe-area-inset-left, 0px) + 1rem)',
         backgroundColor: engaged
-          ? 'rgba(18, 26, 28, 0.58)'
-          : 'rgba(18, 26, 28, 0.42)',
-        boxShadow:
-          '0 8px 24px rgba(0, 0, 0, 0.4), inset 0 0 18px rgba(45, 212, 191, 0.14)',
+          ? 'rgba(18, 26, 28, 0.56)'
+          : 'rgba(18, 26, 28, 0.36)',
+        boxShadow: isRunningZone
+          ? '0 8px 24px rgba(0, 0, 0, 0.42), inset 0 0 22px rgba(45, 212, 191, 0.24)'
+          : '0 8px 24px rgba(0, 0, 0, 0.38), inset 0 0 18px rgba(45, 212, 191, 0.12)',
         touchAction: 'none',
         userSelect: 'none',
         WebkitUserSelect: 'none',
         WebkitTouchCallout: 'none',
       }}
     >
-      {/* Directional rune ticks */}
+      {/* Inner Walk vs Outer Run Threshold Ring */}
       <div className="pointer-events-none absolute inset-2 rounded-full border border-[#c79d52]/25" />
+      <div className="pointer-events-none absolute inset-6 rounded-full border border-dashed border-[#c79d52]/20" />
       <span className="pointer-events-none absolute top-1.5 text-[9px] font-bold text-[#d9bf8e]/70">
         ▲
       </span>
@@ -162,11 +179,12 @@ function VirtualJoystickInner() {
       {/* Thumb Knob */}
       <div
         data-testid="virtual-joystick-knob"
-        className="pointer-events-none h-11 w-11 rounded-full border border-[#e7c57c]/80"
+        className="pointer-events-none h-11 w-11 rounded-full border border-[#e7c57c]/85"
         style={{
           transform: `translate3d(${knobOffset.x}px, ${knobOffset.y}px, 0)`,
-          background:
-            'radial-gradient(circle at 35% 30%, rgba(56, 189, 248, 0.72), rgba(23, 76, 71, 0.88))',
+          background: isRunningZone
+            ? 'radial-gradient(circle at 35% 30%, rgba(94, 234, 212, 0.85), rgba(23, 76, 71, 0.92))'
+            : 'radial-gradient(circle at 35% 30%, rgba(56, 189, 248, 0.68), rgba(23, 76, 71, 0.86))',
           boxShadow: '0 4px 12px rgba(0, 0, 0, 0.45)',
         }}
       />

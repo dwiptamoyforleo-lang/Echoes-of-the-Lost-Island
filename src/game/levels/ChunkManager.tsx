@@ -2,7 +2,9 @@ import { Suspense, useEffect, useRef, useState, type ReactNode } from 'react';
 import { useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { playerTelemetry } from '@/src/game/player/playerTelemetry';
+import { getQualityPreset } from '@/src/game/rendering/adaptiveQuality';
 import { performanceTelemetry } from '@/src/game/rendering/performanceTelemetry';
+import { useGameStore } from '@/src/state/gameStore';
 import {
   unloadAllChunkAudio,
   unloadChunkAudio,
@@ -73,6 +75,11 @@ export function ChunkManager({
   onStreamingPendingChange,
 }: ChunkManagerProps) {
   const { camera } = useThree();
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const rangeScale = getQualityPreset(activeTier).chunkRangeScale;
+  const rangeScaleRef = useRef(rangeScale);
+  rangeScaleRef.current = rangeScale;
+
   const lastHeavyOpMsRef = useRef(-1000);
   const lastStreamEvalMsRef = useRef(-1000);
   const pendingFlagRef = useRef(false);
@@ -88,6 +95,7 @@ export function ChunkManager({
       playerVel: playerTelemetry.velocity,
       nowMs: 1000,
       lastHeavyOpMs: -1000,
+      rangeScale,
     });
     performanceTelemetry.loadedChunks = initial.nextLoaded;
     performanceTelemetry.loadedChunkLabels = resolveChunkLabels(
@@ -111,6 +119,7 @@ export function ChunkManager({
       playerVel: playerTelemetry.velocity,
       nowMs: performance.now(),
       lastHeavyOpMs: -1000,
+      rangeScale: rangeScaleRef.current,
     });
     lastStreamEvalMsRef.current = -1000;
     loadedIdsRef.current = initial.nextLoaded;
@@ -143,6 +152,7 @@ export function ChunkManager({
         playerVel: playerTelemetry.velocity,
         nowMs,
         lastHeavyOpMs: lastHeavyOpMsRef.current,
+        rangeScale: rangeScaleRef.current,
       });
 
       if (res.didHeavyOp) {

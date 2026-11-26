@@ -189,6 +189,19 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
     }
   }, []);
 
+  // Three.js requires disposing the existing shadow map render target to apply a new mapSize
+  useEffect(() => {
+    const light = dirLightRef.current;
+    if (!light) return;
+    const targetSize = Math.max(256, preset.shadowMapSize);
+    light.shadow.mapSize.set(targetSize, targetSize);
+    if (light.shadow.map) {
+      light.shadow.map.dispose();
+      light.shadow.map = null;
+    }
+    light.shadow.needsUpdate = true;
+  }, [preset.shadowMapSize, preset.shadowsEnabled]);
+
   useFrame((state) => {
     const t = state.clock.elapsedTime;
     sharedShaderUniforms.uTime.value = t;
@@ -257,7 +270,10 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
         intensity={palette.sunIntensity}
         color={palette.sunColor}
         castShadow={preset.shadowsEnabled}
-        shadow-mapSize={[preset.shadowMapSize, preset.shadowMapSize]}
+        shadow-mapSize={[
+          Math.max(256, preset.shadowMapSize),
+          Math.max(256, preset.shadowMapSize),
+        ]}
         shadow-camera-near={2}
         shadow-camera-far={96}
         shadow-camera-left={-22}

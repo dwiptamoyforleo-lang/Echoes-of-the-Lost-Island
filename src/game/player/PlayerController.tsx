@@ -21,6 +21,7 @@ import {
   getMovingPlatformDelta,
   isIceCollider,
   resolveHorizontalMoveConfig,
+  resolveTargetMoveSpeed,
   stepStamina,
   stepVerticalKinematics,
   type StaminaState,
@@ -29,6 +30,12 @@ import {
 } from '@/src/game/physics';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
+import {
+  playFootstepSfx,
+  playJumpSfx,
+  playLandSfx,
+  resolveSurfaceType,
+} from '@/src/systems/audioSystem';
 import { consumeInteractAnimationTrigger } from '@/src/systems/interaction';
 import {
   ExplorerModel,
@@ -67,6 +74,8 @@ export function PlayerController({
   const inputRef = useRef<PlayerInputState>({
     forward: 0,
     right: 0,
+    magnitude: 0,
+    fromJoystick: false,
     sprint: false,
     jumpHeld: false,
     jumpJustPressed: false,
@@ -88,6 +97,9 @@ export function PlayerController({
   const pendingTeleportRef = useRef<[number, number, number] | null>(null);
   const wasMountedRef = useRef(levelMounted);
   const onIceRef = useRef(false);
+  const wasGroundedRef = useRef(false);
+  const lastAirVyRef = useRef(0);
+  const strideDistRef = useRef(0);
 
   useEffect(() => {
     const controller = createExplorerCharacterController(world);
@@ -237,14 +249,29 @@ export function PlayerController({
     );
     const isSprinting = canSprint && hasMoveInput;
 
+    const horizConfig = resolveHorizontalMoveConfig(onIceRef.current);
+    const targetSpeed = resolveTargetMoveSpeed(
+      input.magnitude,
+      input.fromJoystick,
+      isSprinting,
+      horizConfig,
+    );
+
     const horiz = approachHorizontalVelocity(
       horizVelRef.current,
       moveDir,
       isSprinting,
       vertStateRef.current.grounded,
       dt,
-      resolveHorizontalMoveConfig(onIceRef.current),
+      horizConfig,
+      targetSpeed,
     );
+
+    const wasGroundedBeforeStep = vertStateRef.current.grounded;
+    const prevVy = vertStateRef.current.vy;
+    if (!wasGroundedBeforeStep) {
+      lastAirVyRef.current = Math.min(lastAirVyRef.current, prevVy);
+    }
 
     const vert = stepVerticalKinematics(
       vertStateRef.current,
@@ -252,6 +279,10 @@ export function PlayerController({
       input.jumpHeld,
       dt,
     );
+    if (vert.justJumped) {
+      playJumpSfx();
+      strideDistRef.current = 0;
+    }
 
     // Disable snap-to-ground while ascending so jumps lift cleanly
     if (vert.vy > 0) {
@@ -346,6 +377,35 @@ export function PlayerController({
     }
 
     const horizSpeed = Math.hypot(horiz.x, horiz.z);
+    const feetPos = {
+      x: next.x,
+      y: next.y - COLLIDER_CENTER_Y,
+      z: next.z,
+    };
+    const surface = resolveSurfaceType(
+      state.activeLevel,
+      feetPos,
+      onIceRef.current,
+    );
+
+    if (!wasGroundedBeforeStep && vert.grounded && lastAirVyRef.current < -3.0) {
+      playLandSfx(Math.abs(lastAirVyRef.current), surface);
+      lastAirVyRef.current = 0;
+      strideDistRef.current = 0;
+    } else if (vert.grounded) {
+      lastAirVyRef.current = 0;
+      if (horizSpeed > 0.7) {
+        const strideLength = isSprinting ? 2.1 : 1.75;
+        strideDistRef.current += horizSpeed * dt;
+        if (strideDistRef.current >= strideLength) {
+          strideDistRef.current %= strideLength;
+          playFootstepSfx(surface);
+        }
+      } else {
+        strideDistRef.current = 0;
+      }
+    }
+    wasGroundedRef.current = vert.grounded;
 
     if (rig) {
       updateExplorerPose(

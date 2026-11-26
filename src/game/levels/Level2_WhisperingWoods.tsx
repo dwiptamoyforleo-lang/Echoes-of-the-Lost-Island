@@ -154,7 +154,8 @@ function WoodsForestProps({
       }
     }
 
-    const flyTarget = preset.particleCap >= 48 ? 16 : 8;
+    const flyTarget =
+      preset.particleCap >= 64 ? 20 : preset.particleCap >= 32 ? 12 : 6;
     for (let i = 0; i < 60 && flyList.length < flyTarget; i++) {
       const x = minX + 3 + rng() * Math.max(2, width - 6);
       const z = minZ + 3 + rng() * Math.max(2, depth - 6);

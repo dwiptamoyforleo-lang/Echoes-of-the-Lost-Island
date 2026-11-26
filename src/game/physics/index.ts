@@ -9,6 +9,7 @@ export {
   DEFAULT_HORIZONTAL_CONFIG,
   ICE_HORIZONTAL_CONFIG,
   resolveHorizontalMoveConfig,
+  resolveTargetMoveSpeed,
   type Vec2XZ,
   type VerticalKinematicsState,
   type StaminaState,

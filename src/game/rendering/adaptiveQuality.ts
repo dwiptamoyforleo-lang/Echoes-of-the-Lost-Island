@@ -28,6 +28,8 @@ export interface QualityPreset {
   mediumPropCullDistance: number;
   lodDistance: number;
   fogScale: number;
+  cameraFar: number;
+  chunkRangeScale: number;
 }
 
 let cachedProfile: DeviceProfile | null = null;
@@ -118,57 +120,63 @@ export function getQualityPreset(
   if (tier === 'low') {
     return {
       tier: 'low',
-      minDpr: 0.65,
-      maxDpr: profile.isSoftwareGl ? 1.0 : Math.min(maxSysDpr, 1.0),
+      minDpr: 0.55,
+      maxDpr: profile.isSoftwareGl ? 1.0 : Math.min(maxSysDpr, 0.75),
       antialias: false,
       shadowsEnabled: false,
-      shadowMapSize: 512,
+      shadowMapSize: 0,
       materialMode: 'lambert',
       simpleWaterAndSky: true,
       postProcessing: 'off',
       physicsHz: 30,
-      particleCap: 24,
-      propCullDistance: 28,
-      mediumPropCullDistance: 46,
-      lodDistance: 20,
+      particleCap: 16,
+      propCullDistance: 26,
+      mediumPropCullDistance: 44,
+      lodDistance: 18,
       fogScale: 0.72,
+      cameraFar: 95,
+      chunkRangeScale: 0.78,
     };
   }
   if (tier === 'medium') {
     return {
       tier: 'medium',
       minDpr: 0.75,
-      maxDpr: profile.isMobile ? Math.min(maxSysDpr, 1.35) : Math.min(maxSysDpr, 1.5),
+      maxDpr: Math.min(maxSysDpr, 1.25),
       antialias: !profile.isMobile,
       shadowsEnabled: !profile.isSoftwareGl,
       shadowMapSize: 1024,
       materialMode: 'standard',
       simpleWaterAndSky: false,
-      postProcessing: profile.isMobile ? 'off' : 'bloom',
+      postProcessing: 'bloom',
       physicsHz: 60,
-      particleCap: 48,
-      propCullDistance: 40,
-      mediumPropCullDistance: 64,
-      lodDistance: 30,
+      particleCap: 40,
+      propCullDistance: 38,
+      mediumPropCullDistance: 62,
+      lodDistance: 28,
       fogScale: 0.88,
+      cameraFar: 185,
+      chunkRangeScale: 0.9,
     };
   }
   return {
     tier: 'high',
-    minDpr: 0.85,
+    minDpr: 0.9,
     maxDpr: profile.isMobile ? Math.min(maxSysDpr, 1.5) : Math.min(maxSysDpr, 2.0),
     antialias: !profile.isMobile,
     shadowsEnabled: !profile.isSoftwareGl,
     shadowMapSize: 2048,
     materialMode: 'standard',
     simpleWaterAndSky: false,
-    postProcessing: profile.isMobile ? 'bloom' : 'full',
+    postProcessing: 'full',
     physicsHz: 60,
     particleCap: 72,
     propCullDistance: 54,
     mediumPropCullDistance: 85,
     lodDistance: 42,
     fogScale: 1.0,
+    cameraFar: 360,
+    chunkRangeScale: 1.0,
   };
 }
 

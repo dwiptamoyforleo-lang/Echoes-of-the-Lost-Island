@@ -9,9 +9,14 @@ import {
 } from './assetCache';
 import {
   AdaptiveQualityMonitor,
+  getQualityPreset,
   resolveInitialTier,
   type DeviceProfile,
 } from './adaptiveQuality';
+import {
+  evaluateChunkStreaming,
+  type ChunkDefinition,
+} from '@/src/game/levels/chunkStreaming';
 import { createInitialProgression } from '@/src/systems/progressionSystem';
 import { createInitialQuests } from '@/src/systems/questSystem';
 import { parseSaveData } from '@/src/systems/saveSystem';
@@ -162,4 +167,81 @@ test('worldStateSystem persists moved blocks, platform phase, switches, and surv
     parsed.data?.worldState?.levels.level1?.['ferry-east-inlet']?.phase,
     0.72,
   );
+});
+
+test('QualityPreset differentiates Low, Medium, and High across shadows, DPR, draw distance, particles, and post-processing', () => {
+  const low = getQualityPreset('low', DESKTOP_HW);
+  const med = getQualityPreset('medium', DESKTOP_HW);
+  const high = getQualityPreset('high', DESKTOP_HW);
+
+  // 1. Shadow resolution
+  assert.equal(low.shadowsEnabled, false);
+  assert.equal(low.shadowMapSize, 0);
+  assert.equal(med.shadowsEnabled, true);
+  assert.equal(med.shadowMapSize, 1024);
+  assert.equal(high.shadowsEnabled, true);
+  assert.equal(high.shadowMapSize, 2048);
+
+  // 2. DPR
+  assert.ok(low.maxDpr < med.maxDpr && med.maxDpr < high.maxDpr);
+
+  // 3. Draw distance
+  assert.ok(low.cameraFar < med.cameraFar && med.cameraFar < high.cameraFar);
+  assert.ok(low.fogScale < med.fogScale && med.fogScale < high.fogScale);
+  assert.ok(
+    low.propCullDistance < med.propCullDistance &&
+      med.propCullDistance < high.propCullDistance,
+  );
+  assert.ok(
+    low.chunkRangeScale < med.chunkRangeScale &&
+      med.chunkRangeScale < high.chunkRangeScale,
+  );
+
+  // 4. Particles
+  assert.ok(low.particleCap < med.particleCap && med.particleCap < high.particleCap);
+
+  // 5. Post-processing
+  assert.equal(low.postProcessing, 'off');
+  assert.equal(med.postProcessing, 'bloom');
+  assert.equal(high.postProcessing, 'full');
+
+  // Chunk streaming respects rangeScale
+  const chunks: ChunkDefinition[] = [
+    {
+      id: 'near',
+      label: 'Near',
+      center: [0, 0, 0],
+      boundsRadius: 10,
+      loadRadius: 20,
+      unloadRadius: 25,
+    },
+    {
+      id: 'mid',
+      label: 'Mid',
+      center: [36, 0, 0],
+      boundsRadius: 10,
+      loadRadius: 40,
+      unloadRadius: 48,
+    },
+  ];
+  const highRes = evaluateChunkStreaming({
+    chunks,
+    currentlyLoaded: [],
+    playerPos: { x: 0, y: 0, z: 0 },
+    playerVel: { x: 0, y: 0, z: 0 },
+    nowMs: 1000,
+    lastHeavyOpMs: -1000,
+    rangeScale: high.chunkRangeScale,
+  });
+  const lowRes = evaluateChunkStreaming({
+    chunks,
+    currentlyLoaded: [],
+    playerPos: { x: 0, y: 0, z: 0 },
+    playerVel: { x: 0, y: 0, z: 0 },
+    nowMs: 1000,
+    lastHeavyOpMs: -1000,
+    rangeScale: low.chunkRangeScale,
+  });
+  assert.deepEqual(highRes.nextLoaded, ['near', 'mid']);
+  assert.deepEqual(lowRes.nextLoaded, ['near']);
 });

@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useGameStore } from '@/src/state/gameStore';
+import { useInputMode } from '@/src/systems/inputMode';
 import type { ItemCategory } from '@/src/systems/inventorySystem';
 import { ItemIcon } from './ItemIcon';
 import { RuneCorner, RuneDivider } from './RuneOrnaments';
@@ -15,6 +16,7 @@ const CATEGORIES: { id: CategoryFilter; label: string }[] = [
 ];
 
 export function InventoryScreen() {
+  const inputMode = useInputMode();
   const activeOverlay = useGameStore((s) => s.activeOverlay);
   const setActiveOverlay = useGameStore((s) => s.setActiveOverlay);
   const inventoryItems = useGameStore((s) => s.inventoryItems);
@@ -34,12 +36,16 @@ export function InventoryScreen() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-6"
-      style={{ backgroundColor: 'rgba(10, 16, 18, 0.78)' }}
+      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-2.5 sm:p-6"
+      style={{
+        backgroundColor: 'rgba(10, 16, 18, 0.78)',
+        paddingTop: 'max(0.625rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.625rem, env(safe-area-inset-bottom, 0px))',
+      }}
       data-testid="inventory-screen"
     >
       <div
-        className="stone-panel animate-panel-in relative flex max-h-[86vh] w-full max-w-3xl flex-col overflow-hidden rounded-md p-5 sm:p-6"
+        className="stone-panel animate-panel-in relative flex max-h-[92dvh] w-full max-w-3xl flex-col overflow-hidden rounded-md p-4 sm:p-6"
         role="dialog"
         aria-label="Explorer Inventory"
       >
@@ -48,11 +54,13 @@ export function InventoryScreen() {
 
         <div className="mb-3 flex items-center justify-between gap-3">
           <div>
-            <h2 className="font-display text-xl font-bold text-[#f7ebd2]">
+            <h2 className="font-display text-lg font-bold text-[#f7ebd2] sm:text-xl">
               Explorer Satchel
             </h2>
-            <p className="text-xs text-[#b8aa8e]">
-              Recovered fragments, keys, relics, and resonant crystals · Press I, Tab, or Esc to close
+            <p className="text-[11px] text-[#b8aa8e] sm:text-xs">
+              {inputMode === 'touch'
+                ? 'Recovered fragments, keys, relics, and resonant crystals'
+                : 'Recovered fragments, keys, relics, and resonant crystals · Press I, Tab, or Esc to close'}
             </p>
           </div>
           <button
@@ -61,20 +69,20 @@ export function InventoryScreen() {
               e.currentTarget.blur();
               setActiveOverlay('none');
             }}
-            className="stone-btn rounded px-3.5 py-1.5 text-xs font-semibold"
+            className="stone-btn min-h-[42px] shrink-0 rounded px-3.5 py-1.5 text-xs font-semibold"
           >
             Close
           </button>
         </div>
 
         {/* Category Filter Tabs */}
-        <div className="mb-4 flex flex-wrap gap-1.5 border-b border-[#c79d52]/25 pb-3">
+        <div className="mb-3 flex flex-nowrap gap-1.5 overflow-x-auto border-b border-[#c79d52]/25 pb-2.5 sm:mb-4 sm:flex-wrap sm:pb-3">
           {CATEGORIES.map((cat) => (
             <button
               key={cat.id}
               type="button"
               onClick={() => setCategory(cat.id)}
-              className={`rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
+              className={`min-h-[38px] shrink-0 rounded px-3 py-1.5 text-xs font-semibold transition-colors ${
                 category === cat.id
                   ? 'bronze-btn'
                   : 'stone-btn'

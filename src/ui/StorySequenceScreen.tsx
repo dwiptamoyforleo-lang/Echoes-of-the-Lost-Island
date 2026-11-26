@@ -55,7 +55,7 @@ function SlideIllustration({ art }: { art: StorySlide['art'] }) {
   return (
     <svg
       viewBox="0 0 360 120"
-      className="h-28 w-full rounded border border-[#8a6a34]/45 bg-[#152023]"
+      className="h-20 w-full rounded border border-[#8a6a34]/45 bg-[#152023] sm:h-28"
       aria-hidden="true"
     >
       <defs>
@@ -151,15 +151,19 @@ export function StorySequenceScreen() {
 
   return (
     <div
-      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-4"
-      style={{ backgroundColor: 'rgba(9, 14, 17, 0.84)' }}
+      className="pointer-events-auto fixed inset-0 z-30 flex items-center justify-center p-3 sm:p-4"
+      style={{
+        backgroundColor: 'rgba(9, 14, 17, 0.84)',
+        paddingTop: 'max(0.75rem, env(safe-area-inset-top, 0px))',
+        paddingBottom: 'max(0.75rem, env(safe-area-inset-bottom, 0px))',
+      }}
       data-testid={isIntro ? 'story-intro-screen' : 'story-ending-screen'}
       role="dialog"
       aria-label={isIntro ? 'Expedition Prologue' : 'Expedition Epilogue'}
     >
       <AmbientDust />
 
-      <div className="stone-panel animate-panel-in relative flex max-h-[92vh] w-full max-w-xl flex-col gap-4 overflow-y-auto rounded-md p-6 sm:p-8">
+      <div className="stone-panel animate-panel-in relative flex max-h-[92dvh] w-full max-w-xl flex-col gap-3 overflow-y-auto rounded-md p-4 sm:gap-4 sm:p-8">
         <RuneCorner className="pointer-events-none absolute top-2 left-2" />
         <RuneCorner className="pointer-events-none absolute top-2 right-2 rotate-90" />
         <RuneCorner className="pointer-events-none absolute bottom-2 right-2 rotate-180" />
@@ -176,8 +180,8 @@ export function StorySequenceScreen() {
 
         <SlideIllustration art={slide.art} />
 
-        <div className="parchment-panel flex flex-col gap-2 rounded p-4 sm:p-5">
-          <h2 className="font-display text-lg font-bold text-[#3b2914] sm:text-xl">
+        <div className="parchment-panel flex flex-col gap-2 rounded p-3.5 sm:p-5">
+          <h2 className="font-display text-base font-bold text-[#3b2914] sm:text-xl">
             {slide.title}
           </h2>
           <p className="text-xs leading-relaxed text-[#2b2013] sm:text-sm">
@@ -195,7 +199,7 @@ export function StorySequenceScreen() {
               e.currentTarget.blur();
               completeSequence();
             }}
-            className="stone-btn rounded px-4 py-2 text-xs font-medium"
+            className="stone-btn min-h-[44px] rounded px-4 py-2 text-xs font-medium"
           >
             {isIntro ? 'Skip Prologue' : 'Skip to Credits'}
           </button>
@@ -211,7 +215,7 @@ export function StorySequenceScreen() {
                 setSlideIndex((i) => i + 1);
               }
             }}
-            className="bronze-btn rounded px-5 py-2 text-xs font-semibold"
+            className="bronze-btn min-h-[44px] rounded px-5 py-2 text-xs font-semibold"
           >
             {isLast
               ? isIntro
