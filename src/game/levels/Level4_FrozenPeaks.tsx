@@ -239,6 +239,8 @@ function SnowfallParticles() {
  * Slippery Frozen Lake surface collider + glossy glacial ice visual sheet.
  */
 function FrozenLakeSheet() {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const colliderRef = useRef<RapierCollider>(null);
 
   useEffect(() => {
@@ -256,7 +258,7 @@ function FrozenLakeSheet() {
   return (
     <RigidBody type="fixed" position={[0, 1.5, 1]} colliders={false} friction={0.05}>
       <CuboidCollider ref={colliderRef} args={[13.5, 0.15, 12.2]} />
-      <mesh receiveShadow>
+      <mesh receiveShadow={preset.shadowsEnabled}>
         <boxGeometry args={[27, 0.3, 24.4]} />
         <meshStandardMaterial
           color="#93c5fd"
@@ -435,6 +437,8 @@ function IceMirrorPedestal({
   locked: boolean;
   onStepChange: () => void;
 }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const savedPhase = useGameStore(
     (s) => s.worldState.levels[s.activeLevel]?.[id]?.phase,
   );
@@ -495,7 +499,7 @@ function IceMirrorPedestal({
       >
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[0.62, 0.9, 0.62]} position={[0, 0.9, 0]} />
-          <mesh castShadow receiveShadow position={[0, 0.35, 0]}>
+          <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 0.35, 0]}>
             <cylinderGeometry args={[0.72, 0.86, 0.7, 8]} />
             <meshStandardMaterial color="#475569" roughness={0.8} />
           </mesh>
@@ -503,12 +507,12 @@ function IceMirrorPedestal({
 
         <group ref={rotorRef} position={[0, 0.7, 0]}>
           {/* Mirror Stand */}
-          <mesh castShadow position={[0, 0.42, 0]}>
+          <mesh castShadow={preset.shadowsEnabled} position={[0, 0.42, 0]}>
             <cylinderGeometry args={[0.22, 0.32, 0.84, 8]} />
             <meshStandardMaterial color="#64748b" roughness={0.7} />
           </mesh>
           {/* Polished Ice Mirror Disc aimed along -Z when step = 0 (North) */}
-          <mesh castShadow position={[0, 0.95, 0]} rotation={[0, 0, 0]}>
+          <mesh castShadow={preset.shadowsEnabled} position={[0, 0.95, 0]} rotation={[0, 0, 0]}>
             <boxGeometry args={[1.15, 0.95, 0.16]} />
             <meshStandardMaterial
               color={isAligned ? '#fde68a' : '#bae6fd'}
@@ -537,6 +541,23 @@ function IceMirrorPedestal({
  * Renders the golden solar beam segments bouncing across the ice mirrors.
  */
 function SolarBeamRenderer({ segments }: { segments: BeamSegment[] }) {
+  const unitCylGeo = useCachedGeometry('l4-beam-unit-cyl', () => {
+    const g = new THREE.CylinderGeometry(1, 1, 1, 8);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const coreMat = useCachedMaterial('l4-beam-core-mat', () =>
+    new THREE.MeshBasicMaterial({ color: '#fde047' }),
+  );
+  const auraMat = useCachedMaterial('l4-beam-aura-mat', () =>
+    new THREE.MeshBasicMaterial({
+      color: '#f59e0b',
+      transparent: true,
+      opacity: 0.35,
+      depthWrite: false,
+    }),
+  );
+
   return (
     <group name="solar-mirror-beams">
       {segments.map((seg, idx) => {
@@ -552,19 +573,20 @@ function SolarBeamRenderer({ segments }: { segments: BeamSegment[] }) {
         const yaw = Math.atan2(dx, dz);
         return (
           <group key={`beam-seg-${idx}`}>
-            <mesh position={mid} rotation={[Math.PI / 2, 0, -yaw]}>
-              <cylinderGeometry args={[0.11, 0.11, len, 8]} />
-              <meshBasicMaterial color="#fde047" />
-            </mesh>
-            <mesh position={mid} rotation={[Math.PI / 2, 0, -yaw]}>
-              <cylinderGeometry args={[0.24, 0.24, len, 8]} />
-              <meshBasicMaterial
-                color="#f59e0b"
-                transparent
-                opacity={0.35}
-                depthWrite={false}
-              />
-            </mesh>
+            <mesh
+              position={mid}
+              rotation={[Math.PI / 2, 0, -yaw]}
+              geometry={unitCylGeo}
+              material={coreMat}
+              scale={[0.11, len, 0.11]}
+            />
+            <mesh
+              position={mid}
+              rotation={[Math.PI / 2, 0, -yaw]}
+              geometry={unitCylGeo}
+              material={auraMat}
+              scale={[0.24, len, 0.24]}
+            />
             <GlowHalo position={seg.to} color="#fbbf24" scale={2.4} />
           </group>
         );
@@ -574,6 +596,8 @@ function SolarBeamRenderer({ segments }: { segments: BeamSegment[] }) {
 }
 
 export function Level4_FrozenPeaks() {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const chunks = useMemo(() => LEVEL4_CHUNKS.map((s) => s.chunk), []);
   const worldLevelState = useGameStore((s) => s.worldState.levels.level4);
   const mirrorsSolved = useGameStore((s) =>
@@ -712,7 +736,7 @@ export function Level4_FrozenPeaks() {
 
               {/* Solar Prism Emitter */}
               <RigidBody type="fixed" position={[EMITTER_POS[0], 1.65, EMITTER_POS[2]]} colliders="cuboid">
-                <mesh castShadow receiveShadow position={[0, 0.55, 0]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 0.55, 0]}>
                   <cylinderGeometry args={[0.6, 0.78, 1.1, 8]} />
                   <meshStandardMaterial color="#475569" roughness={0.78} />
                 </mesh>
@@ -747,7 +771,7 @@ export function Level4_FrozenPeaks() {
 
               {/* Melt Receiver Crystal beside North Steps */}
               <RigidBody type="fixed" position={[RECEIVER_POS[0], 1.65, RECEIVER_POS[2]]} colliders="cuboid">
-                <mesh castShadow receiveShadow position={[0, 0.55, 0]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 0.55, 0]}>
                   <cylinderGeometry args={[0.58, 0.72, 1.1, 8]} />
                   <meshStandardMaterial color="#475569" roughness={0.8} />
                 </mesh>
@@ -821,11 +845,11 @@ export function Level4_FrozenPeaks() {
 
               {/* Glacial Spire Plateau Ruins, Chest 1 & Traversal Switch */}
               <RigidBody type="fixed" colliders="cuboid">
-                <mesh castShadow receiveShadow position={[-25.5, 6.2, -21]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-25.5, 6.2, -21]}>
                   <cylinderGeometry args={[0.5, 0.62, 3.6, 8]} />
                   <meshStandardMaterial color="#475569" roughness={0.86} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[-16.5, 6.2, -21]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-16.5, 6.2, -21]}>
                   <cylinderGeometry args={[0.5, 0.62, 3.6, 8]} />
                   <meshStandardMaterial color="#475569" roughness={0.86} />
                 </mesh>
@@ -866,43 +890,41 @@ export function Level4_FrozenPeaks() {
               />
               <CrystalField crystals={chunkCrystals} color="#38bdf8" />
 
-              {caveSteps.map((st) => (
-                <RigidBody
-                  key={st.id}
-                  type="fixed"
-                  position={st.position}
-                  colliders="cuboid"
-                >
-                  <mesh receiveShadow>
-                    <boxGeometry args={st.size} />
-                    <meshStandardMaterial color="#475569" roughness={0.86} />
-                  </mesh>
-                </RigidBody>
-              ))}
+              <RigidBody type="fixed" colliders={false} friction={0.95}>
+                {caveSteps.map((st) => (
+                  <group key={st.id} position={st.position}>
+                    <CuboidCollider args={[st.size[0] / 2, st.size[1] / 2, st.size[2] / 2]} />
+                    <mesh receiveShadow={preset.shadowsEnabled}>
+                      <boxGeometry args={st.size} />
+                      <meshStandardMaterial color="#475569" roughness={0.86} />
+                    </mesh>
+                  </group>
+                ))}
+              </RigidBody>
 
               {/* Mountain Cave Walls & Roof enclosing Hidden Chamber */}
               <RigidBody type="fixed" colliders="cuboid">
                 {/* Outer East Cliff Wall */}
-                <mesh receiveShadow position={[29.2, 5.2, -5.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[29.2, 5.2, -5.5]}>
                   <boxGeometry args={[1.4, 6.4, 24]} />
                   <meshStandardMaterial color="#334155" roughness={0.92} />
                 </mesh>
                 {/* West Cave Partition leaving open entry on south-west (z > 0) */}
-                <mesh receiveShadow position={[16.8, 5.2, -9.8]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[16.8, 5.2, -9.8]}>
                   <boxGeometry args={[1.4, 6.4, 13.5]} />
                   <meshStandardMaterial color="#334155" roughness={0.92} />
                 </mesh>
                 {/* North Back Wall */}
-                <mesh receiveShadow position={[23.0, 5.2, -16.8]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[23.0, 5.2, -16.8]}>
                   <boxGeometry args={[13.8, 6.4, 1.4]} />
                   <meshStandardMaterial color="#334155" roughness={0.92} />
                 </mesh>
                 {/* Flanking Walls at Cracked Ice Wall z = -3.5 leaving 5.4m passage [20.3..25.7] */}
-                <mesh receiveShadow position={[18.8, 5.2, -3.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[18.8, 5.2, -3.5]}>
                   <boxGeometry args={[3.0, 6.4, 1.2]} />
                   <meshStandardMaterial color="#3e4e60" roughness={0.88} />
                 </mesh>
-                <mesh receiveShadow position={[27.2, 5.2, -3.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[27.2, 5.2, -3.5]}>
                   <boxGeometry args={[3.0, 6.4, 1.2]} />
                   <meshStandardMaterial color="#3e4e60" roughness={0.88} />
                 </mesh>
@@ -970,50 +992,48 @@ export function Level4_FrozenPeaks() {
               />
               <CrystalField crystals={chunkCrystals} color="#38bdf8" />
 
-              {sanctumSteps.map((st) => (
-                <RigidBody
-                  key={st.id}
-                  type="fixed"
-                  position={st.position}
-                  colliders="cuboid"
-                >
-                  <mesh castShadow receiveShadow>
-                    <boxGeometry args={st.size} />
-                    <meshStandardMaterial color="#64748b" roughness={0.82} />
-                  </mesh>
-                </RigidBody>
-              ))}
+              <RigidBody type="fixed" colliders={false} friction={0.95}>
+                {sanctumSteps.map((st) => (
+                  <group key={st.id} position={st.position}>
+                    <CuboidCollider args={[st.size[0] / 2, st.size[1] / 2, st.size[2] / 2]} />
+                    <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled}>
+                      <boxGeometry args={st.size} />
+                      <meshStandardMaterial color="#64748b" roughness={0.82} />
+                    </mesh>
+                  </group>
+                ))}
+              </RigidBody>
 
               {/* Sanctum Floor & Ancient Frozen Citadel Enclosure */}
               <RigidBody type="fixed" colliders="cuboid">
-                <mesh receiveShadow position={[0, 2.7, -24]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[0, 2.7, -24]}>
                   <boxGeometry args={[20, 1.0, 20]} />
                   <meshStandardMaterial color="#475569" roughness={0.86} />
                 </mesh>
                 {/* Flanking Walls at Frozen Door z = -18.5 */}
-                <mesh castShadow receiveShadow position={[-5.9, 5.5, -18.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-5.9, 5.5, -18.5]}>
                   <boxGeometry args={[7.4, 4.6, 1.2]} />
                   <meshStandardMaterial color="#3b4c5e" roughness={0.88} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[5.9, 5.5, -18.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[5.9, 5.5, -18.5]}>
                   <boxGeometry args={[7.4, 4.6, 1.2]} />
                   <meshStandardMaterial color="#3b4c5e" roughness={0.88} />
                 </mesh>
                 {/* Side & Back Walls */}
-                <mesh castShadow receiveShadow position={[-9.0, 5.5, -25.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-9.0, 5.5, -25.5]}>
                   <boxGeometry args={[1.2, 4.6, 15.2]} />
                   <meshStandardMaterial color="#3b4c5e" roughness={0.88} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[9.0, 5.5, -25.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[9.0, 5.5, -25.5]}>
                   <boxGeometry args={[1.2, 4.6, 15.2]} />
                   <meshStandardMaterial color="#3b4c5e" roughness={0.88} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[0, 5.5, -32.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 5.5, -32.5]}>
                   <boxGeometry args={[19.2, 4.6, 1.2]} />
                   <meshStandardMaterial color="#3b4c5e" roughness={0.88} />
                 </mesh>
                 {/* Fragment Altar Pedestal */}
-                <mesh castShadow receiveShadow position={[0, 3.7, -27.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 3.7, -27.5]}>
                   <boxGeometry args={[2.5, 1.0, 2.5]} />
                   <meshStandardMaterial color="#94a3b8" roughness={0.74} />
                 </mesh>
@@ -1052,6 +1072,7 @@ export function Level4_FrozenPeaks() {
       caveSteps,
       handleMirrorChange,
       mirrorsSolved,
+      preset.shadowsEnabled,
       sanctumSteps,
     ],
   );

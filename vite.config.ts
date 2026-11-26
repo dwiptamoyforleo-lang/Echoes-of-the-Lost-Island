@@ -27,6 +27,33 @@ export default defineConfig(() => {
         'zustand',
       ],
     },
+    build: {
+      chunkSizeWarningLimit: 1200,
+      rollupOptions: {
+        output: {
+          manualChunks(id) {
+            if (!id.includes('node_modules')) return undefined;
+            if (id.includes('@dimforge/rapier3d') || id.includes('@react-three/rapier')) {
+              return 'rapier-physics';
+            }
+            if (id.includes('@react-three/fiber') || id.includes('@react-three/drei')) {
+              return 'r3f-drei';
+            }
+            if (id.includes('/node_modules/three/')) {
+              return 'three-core';
+            }
+            if (
+              id.includes('/node_modules/react/') ||
+              id.includes('/node_modules/react-dom/') ||
+              id.includes('/node_modules/zustand/')
+            ) {
+              return 'react-vendor';
+            }
+            return undefined;
+          },
+        },
+      },
+    },
     server: {
       // HMR is disabled in AI Studio via DISABLE_HMR env var.
       // Do not modify—file watching is disabled to prevent flickering during agent edits.

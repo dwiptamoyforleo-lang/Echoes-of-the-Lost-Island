@@ -1,5 +1,11 @@
 import { forwardRef, useImperativeHandle, useRef } from 'react';
 import * as THREE from 'three';
+import { getQualityPreset } from '@/src/game/rendering/adaptiveQuality';
+import {
+  useCachedGeometry,
+  useCachedMaterial,
+} from '@/src/game/rendering/assetCache';
+import { useGameStore } from '@/src/state/gameStore';
 
 export interface ExplorerRigRefs {
   rootGroup: THREE.Group | null;
@@ -213,6 +219,9 @@ export function updateExplorerPose(
 
 export const ExplorerModel = forwardRef<ExplorerRigRefs>(
   function ExplorerModel(_, ref) {
+    const activeTier = useGameStore((s) => s.activeQualityTier);
+    const cast = getQualityPreset(activeTier).shadowsEnabled;
+
     const rootGroupRef = useRef<THREE.Group>(null);
     const bodyGroupRef = useRef<THREE.Group>(null);
     const headGroupRef = useRef<THREE.Group>(null);
@@ -221,6 +230,37 @@ export const ExplorerModel = forwardRef<ExplorerRigRefs>(
     const leftLegRef = useRef<THREE.Group>(null);
     const rightLegRef = useRef<THREE.Group>(null);
     const scarfTailRef = useRef<THREE.Mesh>(null);
+
+    const torsoGeo = useCachedGeometry('exp-torso', () => new THREE.CapsuleGeometry(0.21, 0.28, 6, 12));
+    const beltGeo = useCachedGeometry('exp-belt', () => new THREE.CylinderGeometry(0.218, 0.218, 0.08, 14));
+    const buckleGeo = useCachedGeometry('exp-buckle', () => new THREE.BoxGeometry(0.09, 0.085, 0.03));
+    const scarfCollarGeo = useCachedGeometry('exp-scarf-collar', () => new THREE.TorusGeometry(0.165, 0.055, 8, 16));
+    const scarfTailGeo = useCachedGeometry('exp-scarf-tail', () => new THREE.BoxGeometry(0.1, 0.34, 0.035));
+    const packGeo = useCachedGeometry('exp-pack', () => new THREE.BoxGeometry(0.32, 0.38, 0.18));
+    const bedrollGeo = useCachedGeometry('exp-bedroll', () => new THREE.CylinderGeometry(0.075, 0.075, 0.34, 12));
+    const claspGeo = useCachedGeometry('exp-clasp', () => new THREE.BoxGeometry(0.1, 0.06, 0.02));
+    const headGeo = useCachedGeometry('exp-head', () => new THREE.SphereGeometry(0.19, 14, 14));
+    const eyeGeo = useCachedGeometry('exp-eye', () => new THREE.SphereGeometry(0.024, 8, 8));
+    const brimGeo = useCachedGeometry('exp-brim', () => new THREE.CylinderGeometry(0.34, 0.35, 0.032, 18));
+    const crownGeo = useCachedGeometry('exp-crown', () => new THREE.CylinderGeometry(0.17, 0.2, 0.16, 16));
+    const hatBandGeo = useCachedGeometry('exp-hatband', () => new THREE.CylinderGeometry(0.203, 0.203, 0.035, 16));
+    const armGeo = useCachedGeometry('exp-arm', () => new THREE.CapsuleGeometry(0.065, 0.22, 6, 10));
+    const handGeo = useCachedGeometry('exp-hand', () => new THREE.SphereGeometry(0.062, 10, 10));
+    const legGeo = useCachedGeometry('exp-leg', () => new THREE.CapsuleGeometry(0.075, 0.24, 6, 10));
+    const bootGeo = useCachedGeometry('exp-boot', () => new THREE.BoxGeometry(0.14, 0.12, 0.22));
+
+    const tunicMat = useCachedMaterial('exp-mat-tunic', () => new THREE.MeshStandardMaterial({ color: '#c86d44', roughness: 0.78, metalness: 0.05 }));
+    const sleeveMat = useCachedMaterial('exp-mat-sleeve', () => new THREE.MeshStandardMaterial({ color: '#b55d38', roughness: 0.78, metalness: 0.05 }));
+    const beltMat = useCachedMaterial('exp-mat-belt', () => new THREE.MeshStandardMaterial({ color: '#523724', roughness: 0.72, metalness: 0.08 }));
+    const brassMat = useCachedMaterial('exp-mat-brass', () => new THREE.MeshStandardMaterial({ color: '#d4a84f', roughness: 0.28, metalness: 0.75 }));
+    const scarfMat = useCachedMaterial('exp-mat-scarf', () => new THREE.MeshStandardMaterial({ color: '#2a9d8f', roughness: 0.72, metalness: 0.04 }));
+    const packMat = useCachedMaterial('exp-mat-pack', () => new THREE.MeshStandardMaterial({ color: '#8c6239', roughness: 0.82, metalness: 0.05 }));
+    const bedrollMat = useCachedMaterial('exp-mat-bedroll', () => new THREE.MeshStandardMaterial({ color: '#d9c39e', roughness: 0.85, metalness: 0.02 }));
+    const skinMat = useCachedMaterial('exp-mat-skin', () => new THREE.MeshStandardMaterial({ color: '#ecc09a', roughness: 0.74, metalness: 0.02 }));
+    const eyeMat = useCachedMaterial('exp-mat-eye', () => new THREE.MeshStandardMaterial({ color: '#1f2937', roughness: 0.3 }));
+    const hatMat = useCachedMaterial('exp-mat-hat', () => new THREE.MeshStandardMaterial({ color: '#d4b98c', roughness: 0.82, metalness: 0.04 }));
+    const pantsMat = useCachedMaterial('exp-mat-pants', () => new THREE.MeshStandardMaterial({ color: '#2d3640', roughness: 0.85, metalness: 0.04 }));
+    const bootMat = useCachedMaterial('exp-mat-boot', () => new THREE.MeshStandardMaterial({ color: '#5c3d28', roughness: 0.72, metalness: 0.08 }));
 
     useImperativeHandle(
       ref,
@@ -255,212 +295,47 @@ export const ExplorerModel = forwardRef<ExplorerRigRefs>(
 
     return (
       <group ref={rootGroupRef} name="explorer-character">
-        {/* Torso + Upper Body */}
         <group ref={bodyGroupRef} position={[0, 0.84, 0]}>
-          {/* Tunic Torso */}
-          <mesh castShadow receiveShadow position={[0, 0, 0]}>
-            <capsuleGeometry args={[0.21, 0.28, 6, 12]} />
-            <meshStandardMaterial
-              color="#c86d44"
-              roughness={0.78}
-              metalness={0.05}
-            />
-          </mesh>
+          <mesh geometry={torsoGeo} material={tunicMat} castShadow={cast} receiveShadow={cast} />
+          <mesh geometry={beltGeo} material={beltMat} castShadow={cast} position={[0, -0.14, 0]} />
+          <mesh geometry={buckleGeo} material={brassMat} castShadow={cast} position={[0, -0.14, -0.215]} />
+          <mesh geometry={scarfCollarGeo} material={scarfMat} castShadow={cast} position={[0, 0.24, 0]} rotation={[0.12, 0, 0]} />
+          <mesh ref={scarfTailRef} geometry={scarfTailGeo} material={scarfMat} castShadow={cast} position={[0.06, 0.14, 0.21]} rotation={[0.25, 0, -0.1]} />
 
-          {/* Waist Belt + Brass Buckle */}
-          <mesh castShadow position={[0, -0.14, 0]}>
-            <cylinderGeometry args={[0.218, 0.218, 0.08, 14]} />
-            <meshStandardMaterial
-              color="#523724"
-              roughness={0.72}
-              metalness={0.08}
-            />
-          </mesh>
-          <mesh castShadow position={[0, -0.14, -0.215]}>
-            <boxGeometry args={[0.09, 0.085, 0.03]} />
-            <meshStandardMaterial
-              color="#d4a84f"
-              roughness={0.28}
-              metalness={0.75}
-            />
-          </mesh>
-
-          {/* Explorer Scarf Collar & Trailing Tail */}
-          <mesh castShadow position={[0, 0.24, 0]} rotation={[0.12, 0, 0]}>
-            <torusGeometry args={[0.165, 0.055, 8, 16]} />
-            <meshStandardMaterial
-              color="#2a9d8f"
-              roughness={0.72}
-              metalness={0.04}
-            />
-          </mesh>
-          <mesh
-            ref={scarfTailRef}
-            castShadow
-            position={[0.06, 0.14, 0.21]}
-            rotation={[0.25, 0, -0.1]}
-          >
-            <boxGeometry args={[0.1, 0.34, 0.035]} />
-            <meshStandardMaterial
-              color="#268f82"
-              roughness={0.72}
-              metalness={0.04}
-            />
-          </mesh>
-
-          {/* Expedition Backpack (+Z is character back since forward is -Z) */}
           <group position={[0, 0.03, 0.25]}>
-            <mesh castShadow receiveShadow>
-              <boxGeometry args={[0.32, 0.38, 0.18]} />
-              <meshStandardMaterial
-                color="#8c6239"
-                roughness={0.82}
-                metalness={0.05}
-              />
-            </mesh>
-            {/* Top Bedroll */}
-            <mesh
-              castShadow
-              position={[0, 0.22, 0]}
-              rotation={[0, 0, Math.PI / 2]}
-            >
-              <cylinderGeometry args={[0.075, 0.075, 0.34, 12]} />
-              <meshStandardMaterial
-                color="#d9c39e"
-                roughness={0.85}
-                metalness={0.02}
-              />
-            </mesh>
-            {/* Brass Clasp */}
-            <mesh castShadow position={[0, 0.05, 0.095]}>
-              <boxGeometry args={[0.1, 0.06, 0.02]} />
-              <meshStandardMaterial
-                color="#d4a84f"
-                roughness={0.3}
-                metalness={0.75}
-              />
-            </mesh>
+            <mesh geometry={packGeo} material={packMat} castShadow={cast} receiveShadow={cast} />
+            <mesh geometry={bedrollGeo} material={bedrollMat} castShadow={cast} position={[0, 0.22, 0]} rotation={[0, 0, Math.PI / 2]} />
+            <mesh geometry={claspGeo} material={brassMat} castShadow={cast} position={[0, 0.05, 0.095]} />
           </group>
 
-          {/* Head & Wide-Brim Explorer Hat */}
           <group ref={headGroupRef} position={[0, 0.43, 0]}>
-            <mesh castShadow receiveShadow>
-              <sphereGeometry args={[0.19, 14, 14]} />
-              <meshStandardMaterial
-                color="#ecc09a"
-                roughness={0.74}
-                metalness={0.02}
-              />
-            </mesh>
-            {/* Eyes (facing -Z) */}
-            <mesh position={[-0.065, 0.02, -0.168]}>
-              <sphereGeometry args={[0.024, 8, 8]} />
-              <meshStandardMaterial color="#1f2937" roughness={0.3} />
-            </mesh>
-            <mesh position={[0.065, 0.02, -0.168]}>
-              <sphereGeometry args={[0.024, 8, 8]} />
-              <meshStandardMaterial color="#1f2937" roughness={0.3} />
-            </mesh>
-            {/* Explorer Hat Brim */}
-            <mesh castShadow position={[0, 0.12, 0]} rotation={[-0.08, 0, 0]}>
-              <cylinderGeometry args={[0.34, 0.35, 0.032, 18]} />
-              <meshStandardMaterial
-                color="#d4b98c"
-                roughness={0.82}
-                metalness={0.04}
-              />
-            </mesh>
-            {/* Hat Crown */}
-            <mesh castShadow position={[0, 0.21, 0]} rotation={[-0.08, 0, 0]}>
-              <cylinderGeometry args={[0.17, 0.2, 0.16, 16]} />
-              <meshStandardMaterial
-                color="#c9ab7c"
-                roughness={0.82}
-                metalness={0.04}
-              />
-            </mesh>
-            {/* Hat Band */}
-            <mesh position={[0, 0.15, 0]} rotation={[-0.08, 0, 0]}>
-              <cylinderGeometry args={[0.203, 0.203, 0.035, 16]} />
-              <meshStandardMaterial
-                color="#2a9d8f"
-                roughness={0.65}
-                metalness={0.05}
-              />
-            </mesh>
+            <mesh geometry={headGeo} material={skinMat} castShadow={cast} receiveShadow={cast} />
+            <mesh geometry={eyeGeo} material={eyeMat} position={[-0.065, 0.02, -0.168]} />
+            <mesh geometry={eyeGeo} material={eyeMat} position={[0.065, 0.02, -0.168]} />
+            <mesh geometry={brimGeo} material={hatMat} castShadow={cast} position={[0, 0.12, 0]} rotation={[-0.08, 0, 0]} />
+            <mesh geometry={crownGeo} material={hatMat} castShadow={cast} position={[0, 0.21, 0]} rotation={[-0.08, 0, 0]} />
+            <mesh geometry={hatBandGeo} material={scarfMat} position={[0, 0.15, 0]} rotation={[-0.08, 0, 0]} />
           </group>
 
-          {/* Left Arm Pivot (shoulder) */}
           <group ref={leftArmRef} position={[-0.27, 0.17, 0]}>
-            <mesh castShadow position={[0, -0.16, 0]}>
-              <capsuleGeometry args={[0.065, 0.22, 6, 10]} />
-              <meshStandardMaterial
-                color="#b55d38"
-                roughness={0.78}
-                metalness={0.05}
-              />
-            </mesh>
-            <mesh castShadow position={[0, -0.34, 0]}>
-              <sphereGeometry args={[0.062, 10, 10]} />
-              <meshStandardMaterial color="#ecc09a" roughness={0.74} />
-            </mesh>
+            <mesh geometry={armGeo} material={sleeveMat} castShadow={cast} position={[0, -0.16, 0]} />
+            <mesh geometry={handGeo} material={skinMat} castShadow={cast} position={[0, -0.34, 0]} />
           </group>
 
-          {/* Right Arm Pivot (shoulder) */}
           <group ref={rightArmRef} position={[0.27, 0.17, 0]}>
-            <mesh castShadow position={[0, -0.16, 0]}>
-              <capsuleGeometry args={[0.065, 0.22, 6, 10]} />
-              <meshStandardMaterial
-                color="#b55d38"
-                roughness={0.78}
-                metalness={0.05}
-              />
-            </mesh>
-            <mesh castShadow position={[0, -0.34, 0]}>
-              <sphereGeometry args={[0.062, 10, 10]} />
-              <meshStandardMaterial color="#ecc09a" roughness={0.74} />
-            </mesh>
+            <mesh geometry={armGeo} material={sleeveMat} castShadow={cast} position={[0, -0.16, 0]} />
+            <mesh geometry={handGeo} material={skinMat} castShadow={cast} position={[0, -0.34, 0]} />
           </group>
         </group>
 
-        {/* Left Leg Pivot (hip) */}
         <group ref={leftLegRef} position={[-0.11, 0.56, 0]}>
-          <mesh castShadow position={[0, -0.2, 0]}>
-            <capsuleGeometry args={[0.075, 0.24, 6, 10]} />
-            <meshStandardMaterial
-              color="#2d3640"
-              roughness={0.85}
-              metalness={0.04}
-            />
-          </mesh>
-          <mesh castShadow position={[0, -0.5, -0.03]}>
-            <boxGeometry args={[0.14, 0.12, 0.22]} />
-            <meshStandardMaterial
-              color="#5c3d28"
-              roughness={0.72}
-              metalness={0.08}
-            />
-          </mesh>
+          <mesh geometry={legGeo} material={pantsMat} castShadow={cast} position={[0, -0.2, 0]} />
+          <mesh geometry={bootGeo} material={bootMat} castShadow={cast} position={[0, -0.5, -0.03]} />
         </group>
 
-        {/* Right Leg Pivot (hip) */}
         <group ref={rightLegRef} position={[0.11, 0.56, 0]}>
-          <mesh castShadow position={[0, -0.2, 0]}>
-            <capsuleGeometry args={[0.075, 0.24, 6, 10]} />
-            <meshStandardMaterial
-              color="#2d3640"
-              roughness={0.85}
-              metalness={0.04}
-            />
-          </mesh>
-          <mesh castShadow position={[0, -0.5, -0.03]}>
-            <boxGeometry args={[0.14, 0.12, 0.22]} />
-            <meshStandardMaterial
-              color="#5c3d28"
-              roughness={0.72}
-              metalness={0.08}
-            />
-          </mesh>
+          <mesh geometry={legGeo} material={pantsMat} castShadow={cast} position={[0, -0.2, 0]} />
+          <mesh geometry={bootGeo} material={bootMat} castShadow={cast} position={[0, -0.5, -0.03]} />
         </group>
       </group>
     );

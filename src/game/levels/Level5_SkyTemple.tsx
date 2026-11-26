@@ -25,6 +25,11 @@ import {
   Switch,
   TriggerZone,
 } from '@/src/game/puzzles';
+import { getQualityPreset } from '@/src/game/rendering/adaptiveQuality';
+import {
+  useCachedGeometry,
+  useCachedMaterial,
+} from '@/src/game/rendering/assetCache';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
 import { playPooledSynth } from '@/src/systems/audioSystem';
@@ -161,6 +166,22 @@ function CloudSeaBelow() {
     return out;
   }, []);
 
+  const puffGeo = useCachedGeometry('l5-cloud-puff-geo', () => {
+    const g = new THREE.DodecahedronGeometry(1, 1);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const puffMat = useCachedMaterial('l5-cloud-puff-mat', () =>
+    new THREE.MeshStandardMaterial({
+      color: '#f7d5b8',
+      emissive: '#be4b8b',
+      emissiveIntensity: 0.22,
+      roughness: 0.95,
+      transparent: true,
+      opacity: 0.78,
+    }),
+  );
+
   useEffect(() => {
     if (!puffsRef.current) return;
     puffs.forEach((p, i) => {
@@ -188,17 +209,7 @@ function CloudSeaBelow() {
       <mesh position={[0, -7.2, -6]} rotation={[-Math.PI / 2, 0, 0]} material={cloudMat}>
         <planeGeometry args={[280, 280, 24, 24]} />
       </mesh>
-      <instancedMesh ref={puffsRef} args={[undefined, undefined, puffs.length]}>
-        <dodecahedronGeometry args={[1, 1]} />
-        <meshStandardMaterial
-          color="#f7d5b8"
-          emissive="#be4b8b"
-          emissiveIntensity={0.22}
-          roughness={0.95}
-          transparent
-          opacity={0.78}
-        />
-      </instancedMesh>
+      <instancedMesh ref={puffsRef} args={[puffGeo, puffMat, puffs.length]} />
     </group>
   );
 }
@@ -207,6 +218,8 @@ function CloudSeaBelow() {
  * Floating Sky Island slab with marble deck, golden rune rim, and tapered crystalline underbelly.
  */
 function FloatingIslandDeck({ island }: { island: SkyIslandSpec }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const [cx, cy, cz] = island.center;
   const [w, h, d] = island.size;
   const underDepth = Math.min(w, d) * 0.55;
@@ -216,7 +229,7 @@ function FloatingIslandDeck({ island }: { island: SkyIslandSpec }) {
       <RigidBody type="fixed" colliders={false} friction={1.0}>
         <CuboidCollider args={[w / 2, h / 2, d / 2]} />
         {/* Sunlit Marble Deck */}
-        <mesh receiveShadow castShadow>
+        <mesh receiveShadow={preset.shadowsEnabled} castShadow={preset.shadowsEnabled}>
           <boxGeometry args={[w, h, d]} />
           <meshStandardMaterial color="#e6dcc6" roughness={0.82} />
         </mesh>
@@ -346,6 +359,8 @@ function FragmentPedestal({
   placed: boolean;
   onPlace: (pedestalId: string, fragmentId: string, name: string) => void;
 }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const orbRef = useRef<THREE.Mesh>(null);
   useFrame((state, rawDt) => {
     if (!orbRef.current) return;
@@ -371,7 +386,7 @@ function FragmentPedestal({
       >
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[0.6, 0.7, 0.6]} position={[0, 0.7, 0]} />
-          <mesh castShadow receiveShadow position={[0, 0.55, 0]}>
+          <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 0.55, 0]}>
             <cylinderGeometry args={[0.55, 0.72, 1.1, 8]} />
             <meshStandardMaterial color="#d6cbb4" roughness={0.78} />
           </mesh>
@@ -523,6 +538,8 @@ function RestoredEnergyBeacon({ active }: { active: boolean }) {
 }
 
 export function Level5_SkyTemple() {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const chunks = useMemo(() => LEVEL5_CHUNKS.map((s) => s.chunk), []);
   const activatedIds = useGameStore((s) => s.activatedIds);
   const recoveredFragments = useGameStore((s) => s.recoveredFragments);
@@ -641,7 +658,7 @@ export function Level5_SkyTemple() {
               {/* Arrival Colonnade Pillars */}
               <RigidBody type="fixed" colliders="cuboid">
                 {[-4.5, 4.5].map((px, idx) => (
-                  <mesh key={`l5-arr-col-${idx}`} castShadow receiveShadow position={[px, 4.7, 21.5]}>
+                  <mesh key={`l5-arr-col-${idx}`} castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[px, 4.7, 21.5]}>
                     <cylinderGeometry args={[0.42, 0.5, 4.4, 8]} />
                     <meshStandardMaterial color="#e7dec8" roughness={0.78} />
                   </mesh>
@@ -843,11 +860,11 @@ export function Level5_SkyTemple() {
 
               {/* Eastern Vault Enclosure & Key-Locked Door */}
               <RigidBody type="fixed" colliders="cuboid">
-                <mesh castShadow receiveShadow position={[17.8, 6.2, -2.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[17.8, 6.2, -2.5]}>
                   <boxGeometry args={[3.4, 4.4, 1.0]} />
                   <meshStandardMaterial color="#dcd1ba" roughness={0.82} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[27.2, 6.2, -2.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[27.2, 6.2, -2.5]}>
                   <boxGeometry args={[3.4, 4.4, 1.0]} />
                   <meshStandardMaterial color="#dcd1ba" roughness={0.82} />
                 </mesh>
@@ -902,35 +919,35 @@ export function Level5_SkyTemple() {
               {/* Temple Colonnade & Sanctum Walls */}
               <RigidBody type="fixed" colliders="cuboid">
                 {[-9.5, 9.5].map((cx, idx) => (
-                  <mesh key={`l5-tcol-f-${idx}`} castShadow receiveShadow position={[cx, 7.6, -17.0]}>
+                  <mesh key={`l5-tcol-f-${idx}`} castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[cx, 7.6, -17.0]}>
                     <cylinderGeometry args={[0.55, 0.68, 6.0, 10]} />
                     <meshStandardMaterial color="#ebe2ce" roughness={0.76} />
                   </mesh>
                 ))}
                 {/* Sanctum Gate Flanking Walls at z = -21 */}
-                <mesh castShadow receiveShadow position={[-7.6, 7.0, -21.0]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-7.6, 7.0, -21.0]}>
                   <boxGeometry args={[10.2, 4.8, 1.2]} />
                   <meshStandardMaterial color="#dfd4bc" roughness={0.82} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[7.6, 7.0, -21.0]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[7.6, 7.0, -21.0]}>
                   <boxGeometry args={[10.2, 4.8, 1.2]} />
                   <meshStandardMaterial color="#dfd4bc" roughness={0.82} />
                 </mesh>
                 {/* Sanctum Side & Back Walls */}
-                <mesh castShadow receiveShadow position={[-12.5, 7.0, -29.8]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-12.5, 7.0, -29.8]}>
                   <boxGeometry args={[1.2, 4.8, 18.8]} />
                   <meshStandardMaterial color="#dfd4bc" roughness={0.82} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[12.5, 7.0, -29.8]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[12.5, 7.0, -29.8]}>
                   <boxGeometry args={[1.2, 4.8, 18.8]} />
                   <meshStandardMaterial color="#dfd4bc" roughness={0.82} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[0, 7.0, -38.6]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 7.0, -38.6]}>
                   <boxGeometry args={[26.2, 4.8, 1.2]} />
                   <meshStandardMaterial color="#dfd4bc" roughness={0.82} />
                 </mesh>
                 {/* Horizon Cradle Altar */}
-                <mesh castShadow receiveShadow position={[0, 5.1, -31.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 5.1, -31.5]}>
                   <cylinderGeometry args={[1.7, 2.1, 1.0, 12]} />
                   <meshStandardMaterial color="#f5ecd6" roughness={0.7} />
                 </mesh>
@@ -992,6 +1009,7 @@ export function Level5_SkyTemple() {
       finaleCutscene.islandRestored,
       grandBridgeActive,
       handlePlacePedestal,
+      preset.shadowsEnabled,
       recoveredFragments,
       sanctumUnsealed,
       westSolved,

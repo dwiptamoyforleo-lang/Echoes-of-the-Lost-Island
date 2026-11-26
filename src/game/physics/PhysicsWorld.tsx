@@ -35,7 +35,7 @@ export function PhysicsWorld({ children, paused = false }: PhysicsWorldProps) {
       gravity={[0, -9.81, 0]}
       paused={paused}
       timeStep={timeStep}
-      maxCcdSubsteps={1}
+      maxCcdSubsteps={2}
     >
       <RapierInitLogger />
       {children}

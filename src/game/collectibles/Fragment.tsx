@@ -7,6 +7,11 @@ import {
 } from '@react-three/rapier';
 import * as THREE from 'three';
 import { isPlayerPayload } from '@/src/game/physics';
+import { getQualityPreset } from '@/src/game/rendering/adaptiveQuality';
+import {
+  useCachedGeometry,
+  useCachedMaterial,
+} from '@/src/game/rendering/assetCache';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
 
@@ -17,6 +22,9 @@ export interface FragmentProps {
 }
 
 export function Fragment({ id, name, position }: FragmentProps) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
+
   const [collecting, setCollecting] = useState(false);
   const collectProgressRef = useRef(0);
   const completedRef = useRef(false);
@@ -25,6 +33,48 @@ export function Fragment({ id, name, position }: FragmentProps) {
   const coreRef = useRef<THREE.Mesh>(null);
   const ringARef = useRef<THREE.Mesh>(null);
   const ringBRef = useRef<THREE.Mesh>(null);
+
+  const coreGeo = useCachedGeometry('fragment-core-octa', () => {
+    const g = new THREE.OctahedronGeometry(0.52, 0);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const ringAGeo = useCachedGeometry('fragment-ring-a', () => {
+    const g = new THREE.TorusGeometry(0.82, 0.045, 10, 28);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const ringBGeo = useCachedGeometry('fragment-ring-b', () => {
+    const g = new THREE.TorusGeometry(0.98, 0.035, 10, 28);
+    g.computeBoundingSphere();
+    return g;
+  });
+
+  const coreMat = useCachedMaterial('fragment-core-mat', () =>
+    new THREE.MeshStandardMaterial({
+      color: '#5eead4',
+      emissive: '#14b8a6',
+      emissiveIntensity: 1.5,
+      roughness: 0.12,
+      metalness: 0.35,
+    }),
+  );
+  const ringAMat = useCachedMaterial('fragment-ring-a-mat', () =>
+    new THREE.MeshStandardMaterial({
+      color: '#f59e0b',
+      emissive: '#d97706',
+      emissiveIntensity: 0.35,
+      roughness: 0.25,
+      metalness: 0.85,
+    }),
+  );
+  const ringBMat = useCachedMaterial('fragment-ring-b-mat', () =>
+    new THREE.MeshStandardMaterial({
+      color: '#fde68a',
+      roughness: 0.25,
+      metalness: 0.8,
+    }),
+  );
 
   useFrame((state, rawDt) => {
     const dt = Math.min(rawDt, 0.05);
@@ -72,39 +122,18 @@ export function Fragment({ id, name, position }: FragmentProps) {
   return (
     <group position={position}>
       <group ref={rootRef}>
-        {/* Glowing Octahedral Core */}
-        <mesh ref={coreRef} castShadow>
-          <octahedronGeometry args={[0.52, 0]} />
-          <meshStandardMaterial
-            color="#5eead4"
-            emissive="#14b8a6"
-            emissiveIntensity={1.5}
-            roughness={0.12}
-            metalness={0.35}
-          />
-        </mesh>
+        <mesh
+          ref={coreRef}
+          geometry={coreGeo}
+          material={coreMat}
+          castShadow={preset.shadowsEnabled}
+        />
+        <mesh ref={ringARef} geometry={ringAGeo} material={ringAMat} />
+        <mesh ref={ringBRef} geometry={ringBGeo} material={ringBMat} />
 
-        {/* Orbiting Ancient Brass Rings */}
-        <mesh ref={ringARef}>
-          <torusGeometry args={[0.82, 0.045, 10, 28]} />
-          <meshStandardMaterial
-            color="#f59e0b"
-            emissive="#d97706"
-            emissiveIntensity={0.35}
-            roughness={0.25}
-            metalness={0.85}
-          />
-        </mesh>
-        <mesh ref={ringBRef}>
-          <torusGeometry args={[0.98, 0.035, 10, 28]} />
-          <meshStandardMaterial
-            color="#fde68a"
-            roughness={0.25}
-            metalness={0.8}
-          />
-        </mesh>
-
-        <pointLight color="#2dd4bf" intensity={3.2} distance={8} />
+        {preset.tier !== 'low' && (
+          <pointLight color="#2dd4bf" intensity={3.2} distance={8} />
+        )}
       </group>
 
       {!collecting && (

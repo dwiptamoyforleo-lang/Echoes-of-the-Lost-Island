@@ -25,6 +25,7 @@ import {
   useCachedGeometry,
   useCachedMaterial,
 } from '@/src/game/rendering/assetCache';
+import { playerTelemetry } from '@/src/game/player/playerTelemetry';
 import { eventBus } from '@/src/state/eventBus';
 import { useGameStore } from '@/src/state/gameStore';
 import { playPooledSynth } from '@/src/systems/audioSystem';
@@ -277,9 +278,20 @@ function WoodsForestProps({
     }
   }, [trees, mushrooms]);
 
+  const centerX = (minX + maxX) * 0.5;
+  const centerZ = (minZ + maxZ) * 0.5;
+
   useFrame((state) => {
     const fMesh = fireflyRef.current;
     if (!fMesh || fireflies.length === 0) return;
+    const dx = playerTelemetry.position.x - centerX;
+    const dz = playerTelemetry.position.z - centerZ;
+    const maxDist = preset.mediumPropCullDistance + 12;
+    if (dx * dx + dz * dz > maxDist * maxDist) {
+      fMesh.visible = false;
+      return;
+    }
+    fMesh.visible = true;
     const t = state.clock.elapsedTime;
     for (let i = 0; i < fireflies.length; i++) {
       const f = fireflies[i];
@@ -395,6 +407,8 @@ function ForestLightShafts({
  * Animated river water band & cliff waterfalls with cascading foam streaks.
  */
 function AnimatedRiverAndFalls() {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const fallsWestRef = useRef<THREE.Mesh>(null);
   const fallsEastRef = useRef<THREE.Mesh>(null);
   const foamRingRef = useRef<THREE.Mesh>(null);
@@ -418,7 +432,7 @@ function AnimatedRiverAndFalls() {
   return (
     <group>
       {/* Flowing River Surface along z = -1 */}
-      <mesh position={[2, 0.26, -1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh position={[2, 0.26, -1]} rotation={[-Math.PI / 2, 0, 0]} receiveShadow={preset.shadowsEnabled}>
         <planeGeometry args={[48, 6.2]} />
         <meshStandardMaterial
           color="#137a73"
@@ -432,7 +446,7 @@ function AnimatedRiverAndFalls() {
 
       {/* Western Upper Waterfall Rock Lip & Cascade */}
       <RigidBody type="fixed" position={[-22.5, 2.8, -1]} colliders="cuboid">
-        <mesh castShadow receiveShadow>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled}>
           <boxGeometry args={[4.5, 5.8, 7.6]} />
           <meshStandardMaterial color="#3c4f46" roughness={0.92} />
         </mesh>
@@ -496,6 +510,8 @@ function ForestSpiritTotem({
   rotationY?: number;
   onAwaken: (totemId: TotemId) => void;
 }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const active = useGameStore((s) => Boolean(s.activatedIds[id]));
   const solved = useGameStore((s) => Boolean(s.activatedIds['l2-totems-solved']));
   const crestRef = useRef<THREE.Group>(null);
@@ -530,12 +546,12 @@ function ForestSpiritTotem({
         <RigidBody type="fixed" colliders={false}>
           <CuboidCollider args={[0.55, 1.35, 0.55]} position={[0, 1.35, 0]} />
           {/* Totem Stone Base */}
-          <mesh castShadow receiveShadow position={[0, 0.35, 0]}>
+          <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 0.35, 0]}>
             <cylinderGeometry args={[0.72, 0.88, 0.7, 8]} />
             <meshStandardMaterial color="#4c5c52" roughness={0.88} />
           </mesh>
           {/* Carved Timber Pillar */}
-          <mesh castShadow receiveShadow position={[0, 1.35, 0]}>
+          <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 1.35, 0]}>
             <cylinderGeometry args={[0.38, 0.44, 1.5, 8]} />
             <meshStandardMaterial color="#573c28" roughness={0.85} />
           </mesh>
@@ -648,6 +664,8 @@ function ForestSpiritTotem({
  * Counterweight Timber & Stone Drawbridge that lowers smoothly when all 3 river wheels align.
  */
 function CounterweightDrawbridge({ solved }: { solved: boolean }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const pivotBodyRef = useRef<RapierRigidBody>(null);
   const angleRef = useRef(solved ? 0 : 0.92);
 
@@ -671,15 +689,15 @@ function CounterweightDrawbridge({ solved }: { solved: boolean }) {
     <group>
       {/* Stone Bridge Abutment Pillars & Arch Lintel */}
       <RigidBody type="fixed" colliders="cuboid">
-        <mesh castShadow receiveShadow position={[-2.6, 4.6, 4.0]}>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-2.6, 4.6, 4.0]}>
           <boxGeometry args={[0.95, 3.6, 0.95]} />
           <meshStandardMaterial color="#3d4b42" roughness={0.88} />
         </mesh>
-        <mesh castShadow receiveShadow position={[2.6, 4.6, 4.0]}>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[2.6, 4.6, 4.0]}>
           <boxGeometry args={[0.95, 3.6, 0.95]} />
           <meshStandardMaterial color="#3d4b42" roughness={0.88} />
         </mesh>
-        <mesh castShadow receiveShadow position={[0, 6.45, 4.0]}>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 6.45, 4.0]}>
           <boxGeometry args={[6.4, 0.7, 1.05]} />
           <meshStandardMaterial color="#48594e" roughness={0.86} />
         </mesh>
@@ -692,7 +710,7 @@ function CounterweightDrawbridge({ solved }: { solved: boolean }) {
         colliders={false}
       >
         <CuboidCollider args={[2.1, 0.22, 4.9]} position={[0, -0.1, -4.9]} />
-        <mesh castShadow receiveShadow position={[0, -0.1, -4.9]}>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, -0.1, -4.9]}>
           <boxGeometry args={[4.2, 0.36, 9.8]} />
           <meshStandardMaterial color="#573c26" roughness={0.86} />
         </mesh>
@@ -728,6 +746,8 @@ function CounterweightDrawbridge({ solved }: { solved: boolean }) {
  * Hidden path revealed by East Bank switch: lowers briar stone barrier & raises moss stepping bridge.
  */
 function HiddenGrottoPath({ revealed }: { revealed: boolean }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const bridgeRef = useRef<RapierRigidBody>(null);
   const barrierRef = useRef<RapierRigidBody>(null);
   const progressRef = useRef(revealed ? 1 : 0);
@@ -767,7 +787,7 @@ function HiddenGrottoPath({ revealed }: { revealed: boolean }) {
         colliders={false}
       >
         <CuboidCollider args={[1.9, 0.25, 6.2]} />
-        <mesh castShadow receiveShadow>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled}>
           <boxGeometry args={[3.8, 0.5, 12.4]} />
           <meshStandardMaterial color="#42694c" roughness={0.86} />
         </mesh>
@@ -789,7 +809,7 @@ function HiddenGrottoPath({ revealed }: { revealed: boolean }) {
         colliders={false}
       >
         <CuboidCollider args={[2.6, 1.8, 0.8]} />
-        <mesh castShadow receiveShadow>
+        <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled}>
           <boxGeometry args={[5.2, 3.6, 1.6]} />
           <meshStandardMaterial color="#2f4a37" roughness={0.94} />
         </mesh>
@@ -799,6 +819,8 @@ function HiddenGrottoPath({ revealed }: { revealed: boolean }) {
 }
 
 export function Level2_WhisperingWoods() {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const chunks = useMemo(() => LEVEL2_CHUNKS.map((s) => s.chunk), []);
   const bridgeSolved = useGameStore((s) =>
     Boolean(s.activatedIds['l2-bridge-solved']),
@@ -1023,15 +1045,15 @@ export function Level2_WhisperingWoods() {
 
               {/* Permanent Western Timber Footbridge across the gorge */}
               <RigidBody type="fixed" colliders="cuboid" friction={0.95}>
-                <mesh castShadow receiveShadow position={[-10.5, 3.1, -1.0]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-10.5, 3.1, -1.0]}>
                   <boxGeometry args={[3.6, 0.34, 11.4]} />
                   <meshStandardMaterial color="#6b472b" roughness={0.85} />
                 </mesh>
-                <mesh castShadow position={[-12.1, 3.65, -1.0]}>
+                <mesh castShadow={preset.shadowsEnabled} position={[-12.1, 3.65, -1.0]}>
                   <boxGeometry args={[0.18, 0.85, 11.4]} />
                   <meshStandardMaterial color="#4a301d" roughness={0.88} />
                 </mesh>
-                <mesh castShadow position={[-8.9, 3.65, -1.0]}>
+                <mesh castShadow={preset.shadowsEnabled} position={[-8.9, 3.65, -1.0]}>
                   <boxGeometry args={[0.18, 0.85, 11.4]} />
                   <meshStandardMaterial color="#4a301d" roughness={0.88} />
                 </mesh>
@@ -1089,15 +1111,15 @@ export function Level2_WhisperingWoods() {
 
               {/* Secret Grotto Arch & Lore Stone + Chest 1 */}
               <RigidBody type="fixed" colliders="cuboid">
-                <mesh castShadow receiveShadow position={[17.2, 5.1, -14.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[17.2, 5.1, -14.5]}>
                   <boxGeometry args={[1.4, 3.2, 1.4]} />
                   <meshStandardMaterial color="#4c5d52" roughness={0.9} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[24.8, 5.1, -14.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[24.8, 5.1, -14.5]}>
                   <boxGeometry args={[1.4, 3.2, 1.4]} />
                   <meshStandardMaterial color="#4c5d52" roughness={0.9} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[21.0, 6.9, -14.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[21.0, 6.9, -14.5]}>
                   <boxGeometry args={[9.2, 1.0, 1.6]} />
                   <meshStandardMaterial color="#586a5e" roughness={0.88} />
                 </mesh>
@@ -1146,25 +1168,25 @@ export function Level2_WhisperingWoods() {
 
               {/* Shrine Plaza Stone Floor & Steps */}
               <RigidBody type="fixed" colliders="cuboid" friction={0.95}>
-                <mesh receiveShadow position={[0, 3.5, -21]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[0, 3.5, -21]}>
                   <boxGeometry args={[20, 1.0, 22]} />
                   <meshStandardMaterial color="#506356" roughness={0.88} />
                 </mesh>
               </RigidBody>
 
-              {shrineSteps.map((st) => (
-                <RigidBody
-                  key={st.id}
-                  type="fixed"
-                  position={st.position}
-                  colliders="cuboid"
-                >
-                  <mesh castShadow receiveShadow>
-                    <boxGeometry args={st.size} />
-                    <meshStandardMaterial color="#5c7062" roughness={0.86} />
-                  </mesh>
-                </RigidBody>
-              ))}
+              <RigidBody type="fixed" colliders={false} friction={0.95}>
+                {shrineSteps.map((st) => (
+                  <group key={st.id} position={st.position}>
+                    <CuboidCollider
+                      args={[st.size[0] / 2, st.size[1] / 2, st.size[2] / 2]}
+                    />
+                    <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled}>
+                      <boxGeometry args={st.size} />
+                      <meshStandardMaterial color="#5c7062" roughness={0.86} />
+                    </mesh>
+                  </group>
+                ))}
+              </RigidBody>
 
               {/* Ruined Shrine Columns & Walls */}
               <RigidBody type="fixed" colliders="cuboid">
@@ -1174,35 +1196,35 @@ export function Level2_WhisperingWoods() {
                   [-6.5, 6.2, -19, 4.4],
                   [6.5, 6.2, -19, 4.4],
                 ].map(([cx, cy, cz, ch], idx) => (
-                  <mesh key={`l2-col-${idx}`} castShadow receiveShadow position={[cx, cy, cz]}>
+                  <mesh key={`l2-col-${idx}`} castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[cx, cy, cz]}>
                     <cylinderGeometry args={[0.52, 0.6, ch, 8]} />
                     <meshStandardMaterial color="#485a4e" roughness={0.9} />
                   </mesh>
                 ))}
 
                 {/* Sanctum Chamber Enclosure around Fragment 2 */}
-                <mesh castShadow receiveShadow position={[-5.4, 6.3, -21.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-5.4, 6.3, -21.5]}>
                   <boxGeometry args={[6.2, 4.6, 1.2]} />
                   <meshStandardMaterial color="#425448" roughness={0.9} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[5.4, 6.3, -21.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[5.4, 6.3, -21.5]}>
                   <boxGeometry args={[6.2, 4.6, 1.2]} />
                   <meshStandardMaterial color="#425448" roughness={0.9} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[-8.0, 6.3, -26.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-8.0, 6.3, -26.5]}>
                   <boxGeometry args={[1.2, 4.6, 11.2]} />
                   <meshStandardMaterial color="#425448" roughness={0.9} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[8.0, 6.3, -26.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[8.0, 6.3, -26.5]}>
                   <boxGeometry args={[1.2, 4.6, 11.2]} />
                   <meshStandardMaterial color="#425448" roughness={0.9} />
                 </mesh>
-                <mesh castShadow receiveShadow position={[0, 6.3, -31.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 6.3, -31.5]}>
                   <boxGeometry args={[17.2, 4.6, 1.2]} />
                   <meshStandardMaterial color="#425448" roughness={0.9} />
                 </mesh>
                 {/* Pedestal */}
-                <mesh castShadow receiveShadow position={[0, 4.5, -28.0]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 4.5, -28.0]}>
                   <boxGeometry args={[2.4, 1.0, 2.4]} />
                   <meshStandardMaterial color="#627869" roughness={0.82} />
                 </mesh>
@@ -1259,6 +1281,7 @@ export function Level2_WhisperingWoods() {
       handleTotemAwaken,
       handleWheelChange,
       hiddenPathRevealed,
+      preset.shadowsEnabled,
       shrineSteps,
     ],
   );

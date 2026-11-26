@@ -112,8 +112,23 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
   const palette = LEVEL_BIOMES[levelId];
 
   const dirLightRef = useRef<THREE.DirectionalLight>(null);
-  const lightTargetRef = useRef<THREE.Object3D>(new THREE.Object3D());
+  const lightTarget = useMemo(() => new THREE.Object3D(), []);
   const cloudGroupRef = useRef<THREE.Group>(null);
+
+  const cloudLgGeo = useCachedGeometry('shared-cloud-puff-lg', () => {
+    const g = new THREE.SphereGeometry(3.2, 8, 6);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const cloudSmGeo = useCachedGeometry('shared-cloud-puff-sm', () => {
+    const g = new THREE.SphereGeometry(2.2, 8, 6);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const cloudMat = useCachedMaterial(
+    'shared-cloud-mat',
+    () => new THREE.MeshBasicMaterial({ color: '#f8fafc' }),
+  );
 
   const oceanGeo = useCachedGeometry(
     `ocean-geo-${preset.simpleWaterAndSky ? 'low' : 'hi'}`,
@@ -185,9 +200,9 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
   useEffect(() => {
     const light = dirLightRef.current;
     if (light) {
-      light.target = lightTargetRef.current;
+      light.target = lightTarget;
     }
-  }, []);
+  }, [lightTarget]);
 
   // Three.js requires disposing the existing shadow map render target to apply a new mapSize
   useEffect(() => {
@@ -213,8 +228,8 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
       const snapX = Math.round(p.x * 2) * 0.5;
       const snapZ = Math.round(p.z * 2) * 0.5;
       light.position.set(snapX + 24, 34, snapZ + 18);
-      lightTargetRef.current.position.set(snapX, p.y, snapZ);
-      lightTargetRef.current.updateMatrixWorld();
+      lightTarget.position.set(snapX, p.y, snapZ);
+      lightTarget.updateMatrixWorld();
     }
 
     if (cloudGroupRef.current && !preset.simpleWaterAndSky) {
@@ -263,7 +278,7 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
       <hemisphereLight
         args={[palette.hemiSky, palette.hemiGround, palette.hemiIntensity]}
       />
-      <primitive object={lightTargetRef.current} />
+      <primitive object={lightTarget} />
       <directionalLight
         ref={dirLightRef}
         position={[24, 34, 18]}
@@ -292,14 +307,8 @@ export function SharedBiomeBackdrop({ levelId }: { levelId: LevelId }) {
             [34, -1, 8, 1.1],
           ].map(([cx, cy, cz, cs], idx) => (
             <group key={idx} position={[cx, cy, cz]} scale={cs}>
-              <mesh position={[0, 0, 0]}>
-                <sphereGeometry args={[3.2, 8, 6]} />
-                <meshBasicMaterial color="#f8fafc" />
-              </mesh>
-              <mesh position={[2.6, -0.4, 0.4]}>
-                <sphereGeometry args={[2.2, 8, 6]} />
-                <meshBasicMaterial color="#f8fafc" />
-              </mesh>
+              <mesh geometry={cloudLgGeo} material={cloudMat} position={[0, 0, 0]} />
+              <mesh geometry={cloudSmGeo} material={cloudMat} position={[2.6, -0.4, 0.4]} />
             </group>
           ))}
         </group>

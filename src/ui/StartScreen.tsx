@@ -30,7 +30,14 @@ export function StartScreen() {
 
   if (screen !== 'mainMenu') return null;
 
-  const l1 = progression.level1;
+  const totalCrystalsCollected = Object.values(progression).reduce(
+    (sum, p) => sum + p.crystalsCollected,
+    0,
+  );
+  const totalCrystalsPossible = Object.values(progression).reduce(
+    (sum, p) => sum + p.totalCrystals,
+    0,
+  );
 
   return (
     <div
@@ -97,7 +104,7 @@ export function StartScreen() {
 
         {hasSavedGame && (
           <div className="w-full border-y border-[#c79d52]/25 py-1.5 font-mono text-[11px] text-[#dfd3b8] tabular-nums sm:py-2 sm:text-xs">
-            Saved Expedition · Crystals {l1.crystalsCollected}/{l1.totalCrystals} · Fragments {recoveredFragments.length}/5
+            Saved Expedition · Crystals {totalCrystalsCollected}/{totalCrystalsPossible} · Fragments {recoveredFragments.length}/5
           </div>
         )}
 

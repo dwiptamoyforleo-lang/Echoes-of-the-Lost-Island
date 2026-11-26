@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from '@/src/state/gameStore';
 import {
   LEVEL_CATALOG,
@@ -35,6 +35,12 @@ export function WorldMapScreen() {
   const [selectedId, setSelectedId] = useState<LevelId>(
     activeLevel === 'testArena' ? 'level1' : activeLevel,
   );
+
+  useEffect(() => {
+    if (screen === 'worldMap' && activeLevel !== 'testArena') {
+      setSelectedId(activeLevel);
+    }
+  }, [screen, activeLevel]);
 
   if (screen !== 'worldMap') return null;
 

@@ -53,6 +53,8 @@ function ChamberTorch({
   position: [number, number, number];
   withPointLight?: boolean;
 }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
   const flameRef = useRef<THREE.Mesh>(null);
   const phase = useMemo(
     () => Math.abs(position[0] * 0.7 + position[2] * 1.1),
@@ -78,21 +80,26 @@ function ChamberTorch({
       metalness: 0.65,
     }),
   );
+  const flameGeo = useCachedGeometry('sunken-torch-flame', () => {
+    const g = new THREE.ConeGeometry(0.16, 0.42, 6);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const flameMat = useCachedMaterial('sunken-torch-flame-mat', () =>
+    new THREE.MeshStandardMaterial({
+      color: '#fbbf24',
+      emissive: '#f97316',
+      emissiveIntensity: 2.0,
+      roughness: 0.2,
+    }),
+  );
 
   return (
     <group position={position}>
       <mesh geometry={sconceGeo} material={sconceMat} position={[0, 0.37, 0]} />
-      <mesh ref={flameRef} position={[0, 0.9, 0]}>
-        <coneGeometry args={[0.16, 0.42, 6]} />
-        <meshStandardMaterial
-          color="#fbbf24"
-          emissive="#f97316"
-          emissiveIntensity={2.0}
-          roughness={0.2}
-        />
-      </mesh>
+      <mesh ref={flameRef} geometry={flameGeo} material={flameMat} position={[0, 0.9, 0]} />
       <GlowHalo position={[0, 0.96, 0]} color="#fb923c" scale={2.5} />
-      {withPointLight && (
+      {withPointLight && preset.tier !== 'low' && (
         <pointLight
           position={[0, 1.2, 0]}
           color="#fb923c"
@@ -117,20 +124,46 @@ function CarvedPillar({
   height?: number;
   color?: string;
 }) {
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
+  const shaftGeo = useCachedGeometry('l3-pillar-shaft-unit', () => {
+    const g = new THREE.CylinderGeometry(0.48, 0.58, 1, 8);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const capGeo = useCachedGeometry('l3-pillar-cap', () => {
+    const g = new THREE.BoxGeometry(1.35, 0.5, 1.35);
+    g.computeBoundingSphere();
+    return g;
+  });
+  const shaftMat = useCachedMaterial(`l3-pillar-mat-${color}`, () =>
+    new THREE.MeshStandardMaterial({ color, roughness: 0.88 }),
+  );
+  const capMat = useCachedMaterial('l3-pillar-cap-mat', () =>
+    new THREE.MeshStandardMaterial({ color: '#495f6b', roughness: 0.86 }),
+  );
+
   return (
     <RigidBody type="fixed" position={position} colliders="cuboid">
-      <mesh castShadow receiveShadow position={[0, height / 2, 0]}>
-        <cylinderGeometry args={[0.48, 0.58, height, 8]} />
-        <meshStandardMaterial color={color} roughness={0.88} />
-      </mesh>
-      <mesh receiveShadow position={[0, 0.25, 0]}>
-        <boxGeometry args={[1.35, 0.5, 1.35]} />
-        <meshStandardMaterial color="#495f6b" roughness={0.86} />
-      </mesh>
-      <mesh position={[0, height - 0.25, 0]}>
-        <boxGeometry args={[1.35, 0.5, 1.35]} />
-        <meshStandardMaterial color="#495f6b" roughness={0.86} />
-      </mesh>
+      <mesh
+        castShadow={preset.shadowsEnabled}
+        receiveShadow={preset.shadowsEnabled}
+        position={[0, height / 2, 0]}
+        geometry={shaftGeo}
+        material={shaftMat}
+        scale={[1, height, 1]}
+      />
+      <mesh
+        receiveShadow={preset.shadowsEnabled}
+        position={[0, 0.25, 0]}
+        geometry={capGeo}
+        material={capMat}
+      />
+      <mesh
+        position={[0, height - 0.25, 0]}
+        geometry={capGeo}
+        material={capMat}
+      />
     </RigidBody>
   );
 }
@@ -366,51 +399,51 @@ export function Level3_SunkenKingdom() {
               {/* Underground Stone Walls & High Vaulted Ceiling (y = 9.0) */}
               <RigidBody type="fixed" colliders="cuboid">
                 {/* South back wall behind spawn */}
-                <mesh receiveShadow position={[0, 5.5, 31]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[0, 5.5, 31]}>
                   <boxGeometry args={[20, 7.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* West & East walls of Entry Corridor */}
-                <mesh receiveShadow position={[-8.5, 5.5, 22]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-8.5, 5.5, 22]}>
                   <boxGeometry args={[1.2, 7.0, 18]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[8.5, 5.5, 22]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[8.5, 5.5, 22]}>
                   <boxGeometry args={[1.2, 7.0, 18]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* Corner step-outs connecting Entry Corridor (x=±8.5) to Central Hall (x=±10.2) */}
-                <mesh receiveShadow position={[-9.35, 5.5, 13.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-9.35, 5.5, 13.5]}>
                   <boxGeometry args={[2.6, 7.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[9.35, 5.5, 13.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[9.35, 5.5, 13.5]}>
                   <boxGeometry args={[2.6, 7.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* Central Hall perimeter segments leaving 8m West & East doorways (z=-2..6) */}
-                <mesh receiveShadow position={[-10.2, 5.5, 10]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-10.2, 5.5, 10]}>
                   <boxGeometry args={[1.2, 7.0, 8.2]} />
                   <meshStandardMaterial color="#2e3f4a" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[-10.2, 5.5, -6.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-10.2, 5.5, -6.5]}>
                   <boxGeometry args={[1.2, 7.0, 9.2]} />
                   <meshStandardMaterial color="#2e3f4a" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[10.2, 5.5, 10]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[10.2, 5.5, 10]}>
                   <boxGeometry args={[1.2, 7.0, 8.2]} />
                   <meshStandardMaterial color="#2e3f4a" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[10.2, 5.5, -6.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[10.2, 5.5, -6.5]}>
                   <boxGeometry args={[1.2, 7.0, 9.2]} />
                   <meshStandardMaterial color="#2e3f4a" roughness={0.9} />
                 </mesh>
                 {/* Lintel Headers over West & East Hall Doorways */}
-                <mesh receiveShadow position={[-10.2, 7.5, 2.0]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-10.2, 7.5, 2.0]}>
                   <boxGeometry args={[1.2, 3.0, 8.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[10.2, 7.5, 2.0]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[10.2, 7.5, 2.0]}>
                   <boxGeometry args={[1.2, 3.0, 8.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
@@ -430,12 +463,12 @@ export function Level3_SunkenKingdom() {
               <CarvedPillar position={[6.2, 2.0, -5]} />
 
               {/* Warm Subterranean Torches */}
-              <ChamberTorch position={[-5.2, 3.8, 22.7]} withPointLight />
+              <ChamberTorch position={[-5.2, 3.8, 22.7]} />
               <ChamberTorch position={[5.2, 3.8, 22.7]} />
               <ChamberTorch position={[-6.2, 3.8, 11.7]} withPointLight />
               <ChamberTorch position={[6.2, 3.8, 11.7]} />
               <ChamberTorch position={[-6.2, 3.8, -4.3]} />
-              <ChamberTorch position={[6.2, 3.8, -4.3]} withPointLight />
+              <ChamberTorch position={[6.2, 3.8, -4.3]} />
 
               {/* Glowing Interconnect Conduit Line across Central Hall -> West Crypt */}
               <mesh position={[-5.0, 2.03, 2.0]}>
@@ -478,31 +511,31 @@ export function Level3_SunkenKingdom() {
               {/* West Crypt & Sealed Vault Stone Walls + Ceiling */}
               <RigidBody type="fixed" colliders="cuboid">
                 {/* Outer West Wall */}
-                <mesh receiveShadow position={[-30.2, 5.5, -2]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-30.2, 5.5, -2]}>
                   <boxGeometry args={[1.2, 7.0, 34]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* South Wall */}
-                <mesh receiveShadow position={[-20, 5.5, 13.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-20, 5.5, 13.5]}>
                   <boxGeometry args={[21, 7.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* North Back Wall of Sealed Vault */}
-                <mesh receiveShadow position={[-20, 5.5, -18.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-20, 5.5, -18.5]}>
                   <boxGeometry args={[21, 7.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* Interior Partition Walls flanking Interconnected Door at [-20, 2, -5] */}
-                <mesh receiveShadow position={[-26.5, 5.5, -5.0]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-26.5, 5.5, -5.0]}>
                   <boxGeometry args={[7.2, 7.0, 1.2]} />
                   <meshStandardMaterial color="#344652" roughness={0.88} />
                 </mesh>
-                <mesh receiveShadow position={[-13.5, 5.5, -5.0]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-13.5, 5.5, -5.0]}>
                   <boxGeometry args={[7.2, 7.0, 1.2]} />
                   <meshStandardMaterial color="#344652" roughness={0.88} />
                 </mesh>
                 {/* Bronze Key Carved Sarcophagus Plinth */}
-                <mesh castShadow receiveShadow position={[-23, 2.45, 7]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[-23, 2.45, 7]}>
                   <boxGeometry args={[2.2, 0.9, 1.4]} />
                   <meshStandardMaterial color="#4a5f6b" roughness={0.82} />
                 </mesh>
@@ -515,7 +548,7 @@ export function Level3_SunkenKingdom() {
 
               <CarvedPillar position={[-16.5, 2.0, 8]} />
               <CarvedPillar position={[-25.5, 2.0, 8]} />
-              <ChamberTorch position={[-16.5, 3.8, 8.7]} withPointLight />
+              <ChamberTorch position={[-16.5, 3.8, 8.7]} withPointLight={preset.tier === 'high'} />
               <ChamberTorch position={[-25.5, 3.8, 8.7]} />
               <ChamberTorch position={[-20.0, 3.8, -14.0]} />
 
@@ -574,44 +607,40 @@ export function Level3_SunkenKingdom() {
               <CrystalField crystals={chunkCrystals} color="#38bdf8" />
 
               {/* Stairs from Central Hall to Elevated Walkway & down into Cistern Basin */}
-              {walkwaySteps.map((st) => (
-                <RigidBody
-                  key={st.id}
-                  type="fixed"
-                  position={st.position}
-                  colliders="cuboid"
-                >
-                  <mesh receiveShadow>
-                    <boxGeometry args={st.size} />
-                    <meshStandardMaterial color="#465b66" roughness={0.86} />
-                  </mesh>
-                </RigidBody>
-              ))}
-              {cisternSteps.map((st) => (
-                <RigidBody
-                  key={st.id}
-                  type="fixed"
-                  position={st.position}
-                  colliders="cuboid"
-                >
-                  <mesh receiveShadow>
-                    <boxGeometry args={st.size} />
-                    <meshStandardMaterial color="#3c505c" roughness={0.88} />
-                  </mesh>
-                </RigidBody>
-              ))}
+              <RigidBody type="fixed" colliders={false} friction={0.95}>
+                {walkwaySteps.map((st) => (
+                  <group key={st.id} position={st.position}>
+                    <CuboidCollider args={[st.size[0] / 2, st.size[1] / 2, st.size[2] / 2]} />
+                    <mesh receiveShadow={preset.shadowsEnabled}>
+                      <boxGeometry args={st.size} />
+                      <meshStandardMaterial color="#465b66" roughness={0.86} />
+                    </mesh>
+                  </group>
+                ))}
+              </RigidBody>
+              <RigidBody type="fixed" colliders={false} friction={0.95}>
+                {cisternSteps.map((st) => (
+                  <group key={st.id} position={st.position}>
+                    <CuboidCollider args={[st.size[0] / 2, st.size[1] / 2, st.size[2] / 2]} />
+                    <mesh receiveShadow={preset.shadowsEnabled}>
+                      <boxGeometry args={st.size} />
+                      <meshStandardMaterial color="#3c505c" roughness={0.88} />
+                    </mesh>
+                  </group>
+                ))}
+              </RigidBody>
 
               {/* Cistern Outer Walls & High Vaulted Ceiling */}
               <RigidBody type="fixed" colliders="cuboid">
-                <mesh receiveShadow position={[30.2, 5.0, 0]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[30.2, 5.0, 0]}>
                   <boxGeometry args={[1.2, 10.0, 28]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[20, 5.0, 13.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[20, 5.0, 13.5]}>
                   <boxGeometry args={[21, 10.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[20, 5.0, -12.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[20, 5.0, -12.5]}>
                   <boxGeometry args={[21, 10.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
@@ -625,7 +654,7 @@ export function Level3_SunkenKingdom() {
               <CarvedPillar position={[16.5, 0.2, -7.5]} height={8.2} />
               <CarvedPillar position={[26.5, 0.2, -7.5]} height={8.2} />
               <CarvedPillar position={[26.5, 0.2, 6.5]} height={8.2} />
-              <ChamberTorch position={[12.5, 4.4, 9.5]} withPointLight />
+              <ChamberTorch position={[12.5, 4.4, 9.5]} withPointLight={preset.tier === 'high'} />
               <ChamberTorch position={[26.5, 3.2, 6.5]} />
               <ChamberTorch position={[26.5, 3.2, -7.5]} />
 
@@ -697,47 +726,47 @@ export function Level3_SunkenKingdom() {
               {/* Walls around Bronze Door (z=-11) & Guardian Rotunda & Star Throne */}
               <RigidBody type="fixed" colliders="cuboid">
                 {/* Bronze Door flanking walls & archway lintel at z = -11 */}
-                <mesh receiveShadow position={[-6.55, 5.5, -11]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-6.55, 5.5, -11]}>
                   <boxGeometry args={[7.0, 7.0, 1.2]} />
                   <meshStandardMaterial color="#31434e" roughness={0.88} />
                 </mesh>
-                <mesh receiveShadow position={[6.55, 5.5, -11]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[6.55, 5.5, -11]}>
                   <boxGeometry args={[7.0, 7.0, 1.2]} />
                   <meshStandardMaterial color="#31434e" roughness={0.88} />
                 </mesh>
-                <mesh receiveShadow position={[0, 7.6, -11]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[0, 7.6, -11]}>
                   <boxGeometry args={[6.2, 2.8, 1.2]} />
                   <meshStandardMaterial color="#31434e" roughness={0.88} />
                 </mesh>
                 {/* Guardian Rotunda Side Walls */}
-                <mesh receiveShadow position={[-10.5, 5.5, -22]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-10.5, 5.5, -22]}>
                   <boxGeometry args={[1.2, 7.0, 24]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
-                <mesh receiveShadow position={[10.5, 5.5, -22]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[10.5, 5.5, -22]}>
                   <boxGeometry args={[1.2, 7.0, 24]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* Sanctum Gate flanking walls & archway lintel at z = -25.5 */}
-                <mesh receiveShadow position={[-6.95, 5.5, -25.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[-6.95, 5.5, -25.5]}>
                   <boxGeometry args={[8.1, 7.0, 1.2]} />
                   <meshStandardMaterial color="#31434e" roughness={0.88} />
                 </mesh>
-                <mesh receiveShadow position={[6.95, 5.5, -25.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[6.95, 5.5, -25.5]}>
                   <boxGeometry args={[8.1, 7.0, 1.2]} />
                   <meshStandardMaterial color="#31434e" roughness={0.88} />
                 </mesh>
-                <mesh receiveShadow position={[0, 7.6, -25.5]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[0, 7.6, -25.5]}>
                   <boxGeometry args={[5.8, 2.8, 1.2]} />
                   <meshStandardMaterial color="#31434e" roughness={0.88} />
                 </mesh>
                 {/* North Star Throne Back Wall */}
-                <mesh receiveShadow position={[0, 5.5, -34]}>
+                <mesh receiveShadow={preset.shadowsEnabled} position={[0, 5.5, -34]}>
                   <boxGeometry args={[22, 7.0, 1.2]} />
                   <meshStandardMaterial color="#2b3a44" roughness={0.9} />
                 </mesh>
                 {/* Star Throne Pedestal */}
-                <mesh castShadow receiveShadow position={[0, 2.5, -30.5]}>
+                <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled} position={[0, 2.5, -30.5]}>
                   <boxGeometry args={[2.6, 1.0, 2.6]} />
                   <meshStandardMaterial color="#4d6370" roughness={0.8} />
                 </mesh>
@@ -858,13 +887,12 @@ export function Level3_SunkenKingdom() {
       cisternSteps,
       handleStatueChange,
       interconnectActive,
+      preset.shadowsEnabled,
+      preset.tier,
       statuesSolved,
       walkwaySteps,
     ],
   );
-
-  // Keep lint clean if preset used by future hooks
-  void preset;
 
   return (
     <group name="level3-sunken-kingdom">

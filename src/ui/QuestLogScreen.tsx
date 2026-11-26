@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useGameStore } from '@/src/state/gameStore';
 import { useInputMode } from '@/src/systems/inputMode';
 import { LEVEL_CATALOG, type LevelId } from '@/src/systems/progressionSystem';
@@ -15,6 +15,12 @@ export function QuestLogScreen() {
   const [selectedLevel, setSelectedLevel] = useState<LevelId>(
     activeLevel === 'testArena' ? 'level1' : activeLevel,
   );
+
+  useEffect(() => {
+    if (activeOverlay === 'quests' && activeLevel !== 'testArena') {
+      setSelectedLevel(activeLevel);
+    }
+  }, [activeOverlay, activeLevel]);
 
   if (activeOverlay !== 'quests') return null;
 

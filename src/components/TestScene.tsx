@@ -1,6 +1,8 @@
 import { useEffect, useMemo } from 'react';
 import { useThree } from '@react-three/fiber';
 import { CuboidCollider, RigidBody } from '@react-three/rapier';
+import { getQualityPreset } from '@/src/game/rendering/adaptiveQuality';
+import { useGameStore } from '@/src/state/gameStore';
 
 interface StaticPlatform {
   id: string;
@@ -97,6 +99,8 @@ const STAIR_WIDTH = 3.4;
 
 export function TestScene() {
   const invalidate = useThree((state) => state.invalidate);
+  const activeTier = useGameStore((s) => s.activeQualityTier);
+  const preset = getQualityPreset(activeTier);
 
   useEffect(() => {
     invalidate();
@@ -147,8 +151,11 @@ export function TestScene() {
         position={[20, 32, 18]}
         intensity={2.2}
         color="#fff1d0"
-        castShadow
-        shadow-mapSize={[1024, 1024]}
+        castShadow={preset.shadowsEnabled}
+        shadow-mapSize={[
+          Math.max(256, Math.min(1024, preset.shadowMapSize || 256)),
+          Math.max(256, Math.min(1024, preset.shadowMapSize || 256)),
+        ]}
         shadow-camera-near={1}
         shadow-camera-far={100}
         shadow-camera-left={-32}
@@ -236,25 +243,24 @@ export function TestScene() {
         </mesh>
       </RigidBody>
 
-      {/* Staircase (East) */}
-      {stairs.map((step) => (
-        <RigidBody
-          key={step.id}
-          type="fixed"
-          position={step.position}
-          colliders="cuboid"
-          friction={0.95}
-        >
-          <mesh castShadow receiveShadow>
-            <boxGeometry args={step.size} />
-            <meshStandardMaterial
-              color="#9ca39b"
-              roughness={0.85}
-              metalness={0.04}
+      {/* Staircase (East) consolidated into 1 fixed RigidBody */}
+      <RigidBody type="fixed" colliders={false} friction={0.95}>
+        {stairs.map((step) => (
+          <group key={step.id} position={step.position}>
+            <CuboidCollider
+              args={[step.size[0] / 2, step.size[1] / 2, step.size[2] / 2]}
             />
-          </mesh>
-        </RigidBody>
-      ))}
+            <mesh castShadow={preset.shadowsEnabled} receiveShadow={preset.shadowsEnabled}>
+              <boxGeometry args={step.size} />
+              <meshStandardMaterial
+                color="#9ca39b"
+                roughness={0.85}
+                metalness={0.04}
+              />
+            </mesh>
+          </group>
+        ))}
+      </RigidBody>
 
       {/* Dynamic Pushable Crates */}
       <RigidBody

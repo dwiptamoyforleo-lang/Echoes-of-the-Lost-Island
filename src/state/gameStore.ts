@@ -582,10 +582,51 @@ export const useGameStore = create<GameState>((set, get) => {
         }
       }
 
+      const levelKeyDoorPairs: Partial<
+        Record<LevelId, { keyId: string; doorId: string; label: string }>
+      > = {
+        level1: {
+          keyId: 'key-sanctuary',
+          doorId: 'door-vault',
+          label: 'Sanctuary Key',
+        },
+        level3: {
+          keyId: 'key-bronze',
+          doorId: 'l3-door-bronze',
+          label: 'Bronze Key',
+        },
+        level5: {
+          keyId: 'key-sky',
+          doorId: 'l5-door-east-key',
+          label: 'Sky Temple Key',
+        },
+      };
+
       const levelProgress = state.progression[level];
-      const persistentItems = state.inventoryItems.filter(
+      let persistentItems = state.inventoryItems.filter(
         (i) => i.category !== 'key',
       );
+      const restoredKeys: string[] = [];
+      const keyPair = levelKeyDoorPairs[level];
+      if (
+        keyPair &&
+        persistentCollected[keyPair.keyId] &&
+        !persistentActivated[`door-unlocked-${keyPair.doorId}`]
+      ) {
+        restoredKeys.push(keyPair.keyId);
+        const def = resolveItemDefinition(keyPair.keyId, {
+          category: 'key',
+          iconId: 'key',
+          name: keyPair.label,
+        });
+        persistentItems = addItemToInventory(
+          persistentItems,
+          keyPair.keyId,
+          1,
+          def,
+        );
+      }
+
       set({
         activeLevel: level,
         activeOverlay: 'none',
@@ -596,7 +637,7 @@ export const useGameStore = create<GameState>((set, get) => {
         inventoryVisible: false,
         crystals: levelProgress.crystalsCollected,
         totalCrystals: getLevelMetadata(level).totalCrystals,
-        keys: [],
+        keys: restoredKeys,
         inventoryItems: persistentItems,
         inventory: persistentItems
           .filter((i) => i.category !== 'crystal' && i.category !== 'key')

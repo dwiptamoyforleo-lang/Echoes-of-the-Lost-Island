@@ -135,6 +135,13 @@ export function ThirdPersonCamera() {
         return;
       }
       if (event.pointerType === 'mouse' && event.button !== 0) return;
+      if (
+        event.pointerType === 'touch' &&
+        typeof window !== 'undefined' &&
+        event.clientX < window.innerWidth * 0.5
+      ) {
+        return;
+      }
       if (dragPointerIdRef.current !== null) return;
       dragPointerIdRef.current = event.pointerId;
       dragLastPosRef.current.x = event.clientX;
@@ -312,8 +319,10 @@ export function ThirdPersonCamera() {
     );
 
     const applyTerrainClearance = (pos: THREE.Vector3) => {
-      if (storeState.activeLevel === 'testArena') return;
-      const floorY = getLevelHeight(storeState.activeLevel, pos.x, pos.z) + 0.6;
+      const floorY =
+        storeState.activeLevel === 'testArena'
+          ? 0.55
+          : getLevelHeight(storeState.activeLevel, pos.x, pos.z) + 0.6;
       if (pos.y < floorY) {
         pos.y = floorY;
       }

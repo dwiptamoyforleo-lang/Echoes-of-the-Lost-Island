@@ -236,6 +236,7 @@ export function CrystalField({
     const scales = scalesRef.current;
 
     if (mesh) {
+      let anyVisible = false;
       for (let i = 0; i < crystals.length; i++) {
         const c = crystals[i];
         const isCollected = Boolean(collectedMap[c.id]);
@@ -251,16 +252,25 @@ export function CrystalField({
           _dummy.position.set(0, -200, 0);
           _dummy.scale.setScalar(0);
         } else {
+          anyVisible = true;
           const bob = Math.sin(t * 2.4 + i * 0.7) * 0.14;
           _dummy.position.set(c.position[0], c.position[1] + bob, c.position[2]);
           _dummy.rotation.set(0, t * 1.8 + i * 0.5, 0);
           const popScale = isCollected ? s * 1.35 : s;
           _dummy.scale.setScalar(popScale);
         }
-        _dummy.updateMatrix();
-        mesh.setMatrixAt(i, _dummy.matrix);
+        if (anyVisible || mesh.visible) {
+          _dummy.updateMatrix();
+          mesh.setMatrixAt(i, _dummy.matrix);
+        }
       }
-      mesh.instanceMatrix.needsUpdate = true;
+      if (anyVisible) {
+        mesh.visible = true;
+        mesh.instanceMatrix.needsUpdate = true;
+      } else if (mesh.visible) {
+        mesh.instanceMatrix.needsUpdate = true;
+        mesh.visible = false;
+      }
     }
 
     if (pMesh) {

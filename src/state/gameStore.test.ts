@@ -60,3 +60,56 @@ test('useGameStore transitions cleanly and tracks level collectibles, switches, 
     'Echo of the Tides',
   );
 });
+
+test('startLevel increments runId, restores unspent collected keys, and completeLevel unlocks levels 1 through 5', () => {
+  const store = useGameStore.getState();
+  store.reset();
+
+  const initialRun = useGameStore.getState().runId;
+  store.startLevel('level1');
+  assert.equal(useGameStore.getState().runId, initialRun + 1);
+
+  // Collect Sunstone Vault Key without unlocking door-vault yet
+  store.addKey('key-sanctuary');
+  store.setWorldObjectState('key-sanctuary', { collected: true }, 'level1');
+  assert.deepEqual(useGameStore.getState().keys, ['key-sanctuary']);
+
+  // Reloading level1 should restore key-sanctuary since door-vault is still locked
+  store.startLevel('level1');
+  assert.equal(useGameStore.getState().runId, initialRun + 2);
+  assert.equal(useGameStore.getState().keys.includes('key-sanctuary'), true);
+
+  // Once door-vault is unlocked, reloading level1 should NOT restore key-sanctuary
+  useGameStore
+    .getState()
+    .unlockDoor('door-vault', 'key-sanctuary', 'Sunstone Vault Key');
+  useGameStore.getState().startLevel('level1');
+  assert.equal(useGameStore.getState().keys.includes('key-sanctuary'), false);
+  assert.equal(
+    useGameStore.getState().activatedIds['door-unlocked-door-vault'],
+    true,
+  );
+
+  // Verify full Level 1 -> Level 5 unlock progression chain
+  store.reset();
+  store.startLevel('level1');
+  store.completeLevel('Echo of the Tides');
+  assert.equal(useGameStore.getState().progression.level2.unlocked, true);
+
+  store.startLevel('level2');
+  store.completeLevel('Echo of the Gale');
+  assert.equal(useGameStore.getState().progression.level3.unlocked, true);
+
+  store.startLevel('level3');
+  store.completeLevel('Echo of the Stars');
+  assert.equal(useGameStore.getState().progression.level4.unlocked, true);
+
+  store.startLevel('level4');
+  store.completeLevel('Echo of the Frost');
+  assert.equal(useGameStore.getState().progression.level5.unlocked, true);
+
+  store.startLevel('level5');
+  store.completeLevel('Echo of Eternity');
+  assert.equal(useGameStore.getState().progression.level5.completed, true);
+});
+

@@ -1,4 +1,4 @@
-import { Suspense, useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { GAME_TITLE } from '@/src/config/gameInfo';
 import * as THREE from 'three';
 import { Canvas } from '@react-three/fiber';
@@ -23,7 +23,11 @@ import {
   type ActiveLevelId,
 } from '@/src/state/gameStore';
 import { getLevelMetadata } from '@/src/systems/progressionSystem';
-import { TestScene } from './TestScene';
+import { MenuIslandBackdrop } from './MenuIslandBackdrop';
+
+const LazyTestScene = lazy(() =>
+  import('./TestScene').then((m) => ({ default: m.TestScene })),
+);
 
 const TEST_ARENA_SPAWN: [number, number, number] = [0, 0.95, 8];
 
@@ -64,6 +68,9 @@ export function GameCanvas() {
   const isSoftwareGl = deviceProfile.isSoftwareGl;
 
   const screen = useGameStore((state) => state.screen);
+  const settingsReturnScreen = useGameStore(
+    (state) => state.settingsReturnScreen,
+  );
   const activeLevel = useGameStore((state) => state.activeLevel);
   const activeOverlay = useGameStore((state) => state.activeOverlay);
   const runId = useGameStore((state) => state.runId);
@@ -80,8 +87,20 @@ export function GameCanvas() {
   const [readyKey, setReadyKey] = useState<string | null>(null);
   const [minLoadElapsed, setMinLoadElapsed] = useState(true);
 
+  const isGameplayMounted =
+    screen === 'playing' ||
+    screen === 'paused' ||
+    screen === 'levelComplete' ||
+    (screen === 'settings' && settingsReturnScreen === 'paused');
+
   const expectedReadyKey = `${activeLevel}-${runId}`;
-  const levelMounted = readyKey === expectedReadyKey;
+  const levelMounted = isGameplayMounted && readyKey === expectedReadyKey;
+
+  useEffect(() => {
+    if (!isGameplayMounted) {
+      setReadyKey(null);
+    }
+  }, [isGameplayMounted]);
 
   useEffect(() => {
     const onVis = () => {
@@ -160,7 +179,7 @@ export function GameCanvas() {
     documentHidden || screen === 'paused' || activeOverlay !== 'none';
 
   const ActiveLevelComponent =
-    activeLevel === 'testArena' ? TestScene : LazyLevels[activeLevel];
+    activeLevel === 'testArena' ? LazyTestScene : LazyLevels[activeLevel];
 
   if (!webglSupport.supported) {
     return (
@@ -200,7 +219,9 @@ export function GameCanvas() {
 
   return (
     <div
-      className={`relative h-full w-full ${LEVEL_BG_CLASSES[activeLevel]}`}
+      className={`relative h-full w-full ${
+        isGameplayMounted ? LEVEL_BG_CLASSES[activeLevel] : 'bg-[#8ec5e8]'
+      }`}
       data-testid="canvas-container"
     >
       {contextLost && (
@@ -262,33 +283,37 @@ export function GameCanvas() {
         }}
       >
         {isSoftwareGl && !isPausedForRendering && <SoftwareGlPacer enabled />}
-        <Suspense fallback={<SceneSuspenseBeacon />}>
-          <PhysicsWorld
-            paused={
-              screen !== 'playing' ||
-              activeOverlay !== 'none' ||
-              levelLoading ||
-              !levelMounted ||
-              documentHidden
-            }
-          >
-            <RenderPerformanceController />
-            <Suspense fallback={<SceneSuspenseBeacon />}>
-              <ActiveLevelComponent key={activeLevel} />
-              <LevelReadyReporter
+        {isGameplayMounted ? (
+          <Suspense fallback={<SceneSuspenseBeacon />}>
+            <PhysicsWorld
+              paused={
+                screen !== 'playing' ||
+                activeOverlay !== 'none' ||
+                levelLoading ||
+                !levelMounted ||
+                documentHidden
+              }
+            >
+              <RenderPerformanceController />
+              <Suspense fallback={<SceneSuspenseBeacon />}>
+                <ActiveLevelComponent key={expectedReadyKey} />
+                <LevelReadyReporter
+                  key={expectedReadyKey}
+                  readyKey={expectedReadyKey}
+                  onReady={setReadyKey}
+                />
+              </Suspense>
+              <PlayerController
                 key={expectedReadyKey}
-                readyKey={expectedReadyKey}
-                onReady={setReadyKey}
+                spawnPosition={spawnPosition}
+                levelMounted={levelMounted}
               />
-            </Suspense>
-            <PlayerController
-              key={expectedReadyKey}
-              spawnPosition={spawnPosition}
-              levelMounted={levelMounted}
-            />
-            <ThirdPersonCamera />
-          </PhysicsWorld>
-        </Suspense>
+              <ThirdPersonCamera />
+            </PhysicsWorld>
+          </Suspense>
+        ) : (
+          <MenuIslandBackdrop />
+        )}
       </Canvas>
     </div>
   );

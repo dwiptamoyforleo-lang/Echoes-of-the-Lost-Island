@@ -17,7 +17,7 @@ const CREDIT_SECTIONS = [
   },
   {
     role: 'Engine & Open-Source Stack',
-    detail: 'React, TypeScript, Three.js, React Three Fiber, Drei, Rapier, Zustand, Howler, and Tailwind CSS.',
+    detail: 'React, TypeScript, Three.js, React Three Fiber, Drei, Rapier, Zustand, Web Audio API, and Tailwind CSS.',
   },
 ];
 
