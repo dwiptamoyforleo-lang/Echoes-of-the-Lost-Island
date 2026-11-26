@@ -8,7 +8,7 @@ Journey Home is a stylized third-person 3D adventure across a mysterious archipe
 
 The game is deployed on GitHub Pages. The current repository Pages URL is:
 
-https://dwiptamoyforleo-lang.github.io/Echoes-of-the-Lost-Island/
+https://dwiptamoyforleo-lang.github.io/Journey-Home/
 
 ## Development
 
